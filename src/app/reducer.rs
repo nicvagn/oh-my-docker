@@ -159,9 +159,7 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
             }
         }
         AppEvent::UpdateAvailable(version, url) => {
-            new_state.update_available = Some((version.clone(), url));
-            new_state.error = Some(format!("Update v{} available — press U to download", version));
-            new_state.error_timer = 10;
+            new_state.update_available = Some((version, url));
         }
         AppEvent::UpdateNotAvailable => {
             new_state.error = Some("Already up to date".to_string());
