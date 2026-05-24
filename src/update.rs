@@ -54,18 +54,42 @@ fn target_triple() -> &'static str {
     { "unknown" }
 }
 
+fn http_get_with_retry(url: &str) -> Result<(u16, Vec<u8>)> {
+    for attempt in 0..10 {
+        let result = ureq::get(url)
+            .header("User-Agent", "omdocker")
+            .header("Accept", "application/json")
+            .call();
+        match result {
+            Ok(resp) => {
+                let status = resp.status();
+                let body = resp.into_body().read_to_vec().unwrap_or_default();
+                if status.as_u16() >= 500 {
+                    std::thread::sleep(std::time::Duration::from_secs(5 * (attempt + 1)));
+                    continue;
+                }
+                return Ok((status.as_u16(), body));
+            }
+            Err(e) => {
+                std::thread::sleep(std::time::Duration::from_secs(5 * (attempt + 1)));
+                if attempt == 9 {
+                    return Err(anyhow::anyhow!("request failed after 10 retries: {}", e));
+                }
+            }
+        }
+    }
+    Err(anyhow::anyhow!("request failed after 10 retries"))
+}
+
 fn check_for_update(current_version: &str) -> Result<Option<(String, String)>> {
     let url = format!("https://api.github.com/repos/{}/releases/latest", repo());
-    let resp = ureq::get(&url)
-        .header("User-Agent", "omdocker")
-        .header("Accept", "application/json")
-        .call()?;
+    let (status, body) = http_get_with_retry(&url)?;
 
-    if resp.status() == 204 || resp.status() == 404 {
+    if status == 204 || status == 404 {
         return Ok(None);
     }
 
-    let json: serde_json::Value = resp.into_body().read_json()?;
+    let json: serde_json::Value = serde_json::from_slice(&body)?;
     let latest_tag = json["tag_name"].as_str().unwrap_or("v0.0.0");
     let latest_version = latest_tag.strip_prefix('v').unwrap_or(latest_tag);
 
@@ -96,10 +120,7 @@ fn perform_update(version: &str, url: &str) -> Result<()> {
     std::fs::create_dir_all(&temp_dir)?;
     let archive = temp_dir.join("archive.tar.gz");
 
-    let resp = ureq::get(url)
-        .header("User-Agent", "omdocker")
-        .call()?;
-    let data = resp.into_body().read_to_vec()?;
+    let (_status, data) = http_get_with_retry(url)?;
     std::fs::write(&archive, &data)?;
 
     let status = if url.ends_with(".zip") {
