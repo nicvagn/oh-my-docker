@@ -139,10 +139,11 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
         }
 
         AppEvent::Tick => {
-            if new_state.error_timer > 0 {
+            if !new_state.error_persistent && new_state.error_timer > 0 {
                 new_state.error_timer -= 1;
                 if new_state.error_timer == 0 {
                     new_state.error = None;
+                    new_state.error_persistent = false;
                 }
             }
         }
@@ -161,14 +162,20 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
         AppEvent::UpdateAvailable(version, url) => {
             new_state.update_available = Some((version, url));
         }
-        AppEvent::UpdateNotAvailable => {
-            new_state.error = Some("Already up to date".to_string());
-            new_state.error_timer = 3;
-        }
-
         AppEvent::Error(msg) => {
             new_state.error = Some(msg);
-            new_state.error_timer = 5;
+            new_state.error_persistent = true;
+        }
+        AppEvent::Info(msg) => {
+            if msg.is_empty() {
+                new_state.error = None;
+                new_state.error_persistent = false;
+                new_state.error_timer = 0;
+            } else {
+                new_state.error = Some(msg);
+                new_state.error_timer = 5;
+                new_state.error_persistent = false;
+            }
         }
 
         AppEvent::DockerReconnecting => {

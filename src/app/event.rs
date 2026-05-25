@@ -102,6 +102,7 @@ pub enum AppEvent {
     HideHelp,
     ScrollHelp(i32),
     Error(String),
+    Info(String),
 
     ShowConfirmDialog(String, ConfirmAction),
     ConfirmYes,
@@ -159,7 +160,6 @@ pub enum AppEvent {
 
     CheckUpdate,
     UpdateAvailable(String, String),
-    UpdateNotAvailable,
 
      EventsUpdated(Vec<DockerEvent>),
     ActivateEventsFilter,

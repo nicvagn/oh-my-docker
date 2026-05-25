@@ -67,7 +67,7 @@ pub fn render(frame: &mut Frame, state: &mut AppState) {
     }
 
     if let Some(err) = &state.error {
-        render_error_toast(frame, err);
+        render_error_toast(frame, err, state.error_persistent);
     }
 }
 
@@ -148,17 +148,20 @@ fn render_update_toast(frame: &mut Frame, message: &str) {
     );
 }
 
-fn render_error_toast(frame: &mut Frame, message: &str) {
+fn render_error_toast(frame: &mut Frame, message: &str, persistent: bool) {
     let area = frame.area();
+    let suffix = if persistent { "  [any key]" } else { "" };
+    let full = format!(" {}{} ", message, suffix);
     let toast_area = ratatui::layout::Rect {
-        x: area.width.saturating_sub(message.len() as u16 + 4).min(1),
+        x: area.width.saturating_sub(full.len() as u16 + 2).min(1),
         y: area.height.saturating_sub(3),
-        width: (message.len() as u16 + 4).min(area.width),
+        width: (full.len() as u16 + 2).min(area.width),
         height: 1,
     };
+    let bg = if persistent { Color::Red } else { Color::DarkGray };
     frame.render_widget(
-        Paragraph::new(format!(" {} ", message))
-            .style(Style::default().fg(Color::White).bg(Color::Red)),
+        Paragraph::new(full)
+            .style(Style::default().fg(Color::White).bg(bg)),
         toast_area,
     );
 }

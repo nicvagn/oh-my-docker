@@ -382,6 +382,10 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         }
     }
 
+    if state.error_persistent {
+        return Some(AppEvent::Info(String::new()));
+    }
+
     if key.code == KeyCode::Char('U') {
         return Some(AppEvent::CheckUpdate);
     }

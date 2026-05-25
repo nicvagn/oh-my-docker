@@ -173,10 +173,10 @@ pub fn spawn_check_update(tx: UnboundedSender<AppEvent>) {
                 tx.send(AppEvent::UpdateAvailable(version, url)).ok();
             }
             Ok(None) => {
-                tx.send(AppEvent::UpdateNotAvailable).ok();
+                tx.send(AppEvent::Info("Already up to date".to_string())).ok();
             }
             Err(e) => {
-                tx.send(AppEvent::Error(format!("Update check: {}", e))).ok();
+                tx.send(AppEvent::Info(format!("Update check: {}", e))).ok();
             }
         }
     });
@@ -186,7 +186,7 @@ pub fn spawn_download_update(tx: UnboundedSender<AppEvent>, version: String, dow
     tokio::task::spawn_blocking(move || {
         match perform_update(&version, &download_url) {
             Ok(()) => {
-                tx.send(AppEvent::Error(format!("Updated to v{}! Restart to apply.", version))).ok();
+                tx.send(AppEvent::Info(format!("Updated to v{}! Restart to apply.", version))).ok();
             }
             Err(e) => {
                 tx.send(AppEvent::Error(format!("Update failed: {}", e))).ok();

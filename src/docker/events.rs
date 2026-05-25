@@ -31,7 +31,7 @@ pub async fn stream_events(docker: Docker, tx: UnboundedSender<AppEvent>) -> Res
                 }
             }
             Err(e) => {
-                if tx.send(AppEvent::Error(format!("Events error: {}", e))).is_err() {
+                if tx.send(AppEvent::Info(format!("Events error: {}", e))).is_err() {
                     break;
                 }
             }

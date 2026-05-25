@@ -190,6 +190,7 @@ pub struct AppState {
     pub update_available: Option<(String, String)>,
     pub error: Option<String>,
     pub error_timer: u8,
+    pub error_persistent: bool,
     pub log_streams: HashMap<String, AbortHandle>,
     pub quit: bool,
 }
@@ -214,6 +215,7 @@ impl AppState {
             update_available: None,
             error: None,
             error_timer: 0,
+            error_persistent: false,
             log_streams: HashMap::new(),
             quit: false,
         }

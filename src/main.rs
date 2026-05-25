@@ -151,7 +151,7 @@ async fn main() -> Result<()> {
                 }
                 _ => {
                     let msg = format!("Shell exec failed (container may not have '{}')", shell.shell);
-                    let (s, _c) = app::reducer::reduce(state, app::event::AppEvent::Error(msg));
+                    let (s, _c) = app::reducer::reduce(state, app::event::AppEvent::Info(msg));
                     state = s;
                 }
             }

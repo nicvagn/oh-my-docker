@@ -52,7 +52,7 @@ pub async fn stream_logs(docker: Docker, id: String, tx: UnboundedSender<AppEven
                     batch.push(LogEntry { message });
                 }
                 Err(e) => {
-                    let _ = tx.send(AppEvent::Error(format!("Log poll error: {}", e)));
+                    let _ = tx.send(AppEvent::Info(format!("Log poll error: {}", e)));
                 }
             }
         }

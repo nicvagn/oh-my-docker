@@ -27,7 +27,7 @@ pub fn spawn_container_poller(docker: Docker, tx: UnboundedSender<AppEvent>) {
                             format!("Docker connection lost: {}", e),
                         ));
                         break;
-                    } else if tx.send(AppEvent::Error(format!("Docker: {}", e))).is_err() {
+                    } else if tx.send(AppEvent::Info(format!("Docker: {}", e))).is_err() {
                         break;
                     }
                 }
@@ -60,7 +60,7 @@ pub fn spawn_start(docker: Docker, tx: UnboundedSender<AppEvent>, id: String) {
     tokio::spawn(async move {
         match docker::containers::start_container(&docker, &id).await {
             Ok(()) => {
-                let _ = tx.send(AppEvent::Error(format!("Container {} started", &id[..12.min(id.len())])));
+                let _ = tx.send(AppEvent::Info(format!("Container {} started", &id[..12.min(id.len())])));
             }
             Err(e) => {
                 let _ = tx.send(AppEvent::Error(format!("Start failed: {}", e)));
@@ -87,7 +87,7 @@ pub fn spawn_restart(docker: Docker, tx: UnboundedSender<AppEvent>, id: String) 
     tokio::spawn(async move {
         match docker::containers::restart_container(&docker, &id).await {
             Ok(()) => {
-                let _ = tx.send(AppEvent::Error(format!("Container {} restarted", &id[..12.min(id.len())])));
+                let _ = tx.send(AppEvent::Info(format!("Container {} restarted", &id[..12.min(id.len())])));
             }
             Err(e) => {
                 let _ = tx.send(AppEvent::Error(format!("Restart failed: {}", e)));
@@ -122,7 +122,7 @@ pub fn spawn_image_poller(docker: Docker, tx: UnboundedSender<AppEvent>) {
                     }
                 }
                 Err(e) => {
-                    if tx.send(AppEvent::Error(format!("Images: {}", e))).is_err() {
+                    if tx.send(AppEvent::Info(format!("Images: {}", e))).is_err() {
                         break;
                     }
                 }
@@ -135,7 +135,7 @@ pub fn spawn_remove_image(docker: Docker, tx: UnboundedSender<AppEvent>, id: Str
     tokio::spawn(async move {
         match docker::images::remove_image(&docker, &id).await {
             Ok(()) => {
-                let _ = tx.send(AppEvent::Error(format!("Image {} removed", &id[..12.min(id.len())])));
+                let _ = tx.send(AppEvent::Info(format!("Image {} removed", &id[..12.min(id.len())])));
             }
             Err(e) => {
                 let _ = tx.send(AppEvent::Error(format!("Remove image failed: {}", e)));
@@ -166,7 +166,7 @@ pub fn spawn_remove_network(docker: Docker, tx: UnboundedSender<AppEvent>, id: S
     tokio::spawn(async move {
         match docker::networks::remove_network(&docker, &id).await {
             Ok(()) => {
-                let _ = tx.send(AppEvent::Error(format!("Network {} removed", &id[..12.min(id.len())])));
+                let _ = tx.send(AppEvent::Info(format!("Network {} removed", &id[..12.min(id.len())])));
             }
             Err(e) => {
                 let _ = tx.send(AppEvent::Error(format!("Remove network failed: {}", e)));
@@ -179,7 +179,7 @@ pub fn spawn_remove_volume(docker: Docker, tx: UnboundedSender<AppEvent>, name: 
     tokio::spawn(async move {
         match docker::volumes::remove_volume(&docker, &name).await {
             Ok(()) => {
-                let _ = tx.send(AppEvent::Error(format!("Volume {} removed", name)));
+                let _ = tx.send(AppEvent::Info(format!("Volume {} removed", name)));
             }
             Err(e) => {
                 let _ = tx.send(AppEvent::Error(format!("Remove volume failed: {}", e)));
@@ -206,7 +206,7 @@ pub fn spawn_statistics_poller(docker: Docker, tx: UnboundedSender<AppEvent>) {
                     }
                 }
                 Err(e) => {
-                    if tx.send(AppEvent::Error(format!("Stats: {}", e))).is_err() {
+                    if tx.send(AppEvent::Info(format!("Stats: {}", e))).is_err() {
                         break;
                     }
                 }
@@ -227,7 +227,7 @@ pub fn spawn_network_poller(docker: Docker, tx: UnboundedSender<AppEvent>) {
                     }
                 }
                 Err(e) => {
-                    if tx.send(AppEvent::Error(format!("Networks: {}", e))).is_err() {
+                    if tx.send(AppEvent::Info(format!("Networks: {}", e))).is_err() {
                         break;
                     }
                 }
@@ -248,7 +248,7 @@ pub fn spawn_volume_poller(docker: Docker, tx: UnboundedSender<AppEvent>) {
                     }
                 }
                 Err(e) => {
-                    if tx.send(AppEvent::Error(format!("Volumes: {}", e))).is_err() {
+                    if tx.send(AppEvent::Info(format!("Volumes: {}", e))).is_err() {
                         break;
                     }
                 }
