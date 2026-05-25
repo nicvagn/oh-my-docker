@@ -6,7 +6,7 @@ use ratatui::widgets::{Block, Borders, Cell, Paragraph, BorderType, Row, Table, 
 
 use crate::app::state::ContainersState;
 
-pub fn render(frame: &mut Frame, state: &ContainersState) {
+pub fn render(frame: &mut Frame, state: &ContainersState, tick_count: u64) {
     let area = frame.area();
 
     let title = if state.loading {
@@ -25,6 +25,21 @@ pub fn render(frame: &mut Frame, state: &ContainersState) {
         .border_style(Style::default().fg(Color::Cyan));
 
     let inner = block.inner(area);
+
+    if state.loading && !state.docker_connected {
+        let spinner_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠏'];
+        let spinner = spinner_chars[(tick_count as usize / 2) % spinner_chars.len()];
+        let text = Text::from(vec![
+            Line::from(""),
+            Line::from(Span::styled(
+                format!("  {} Connecting to Docker...", spinner),
+                Style::default().fg(Color::Yellow),
+            )),
+            Line::from(""),
+        ]);
+        frame.render_widget(Paragraph::new(text).block(block), area);
+        return;
+    }
 
     if state.docker_connected && state.items.is_empty() && !state.loading {
         let text = Text::from(vec![

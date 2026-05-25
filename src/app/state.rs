@@ -191,6 +191,7 @@ pub struct AppState {
     pub error: Option<String>,
     pub error_timer: u8,
     pub error_persistent: bool,
+    pub tick_count: u64,
     pub log_streams: HashMap<String, AbortHandle>,
     pub quit: bool,
 }
@@ -216,6 +217,7 @@ impl AppState {
             error: None,
             error_timer: 0,
             error_persistent: false,
+            tick_count: 0,
             log_streams: HashMap::new(),
             quit: false,
         }

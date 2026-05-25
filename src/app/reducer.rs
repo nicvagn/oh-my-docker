@@ -139,6 +139,7 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
         }
 
         AppEvent::Tick => {
+            new_state.tick_count = new_state.tick_count.wrapping_add(1);
             if !new_state.error_persistent && new_state.error_timer > 0 {
                 new_state.error_timer -= 1;
                 if new_state.error_timer == 0 {

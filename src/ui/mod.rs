@@ -20,7 +20,7 @@ pub mod confirm_dialog;
 
 pub fn render(frame: &mut Frame, state: &mut AppState) {
     match state.mode_stack.current() {
-        Mode::Containers => containers::render(frame, &state.containers),
+        Mode::Containers => containers::render(frame, &state.containers, state.tick_count),
         Mode::ContainerDetails(_) => {
             if let Some(ref mut details) = state.details {
                 container_details::render(frame, details);
