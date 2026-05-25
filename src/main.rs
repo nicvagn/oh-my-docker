@@ -226,6 +226,19 @@ fn handle_commands(commands: Vec<Command>, docker: &Option<Docker>, tx: &mpsc::U
                     }
                     Command::RemoveNetwork(id) => tasks::spawn_remove_network(d.clone(), tx.clone(), id),
                     Command::RemoveVolume(name) => tasks::spawn_remove_volume(d.clone(), tx.clone(), name),
+                    Command::ExportLogs(path, lines) => {
+                        let tx = tx.clone();
+                        tokio::spawn(async move {
+                            match tokio::fs::write(&path, lines.join("\n")).await {
+                                Ok(_) => {
+                                    tx.send(app::event::AppEvent::Info(format!("Logs exported to {}", path))).ok();
+                                }
+                                Err(e) => {
+                                    tx.send(app::event::AppEvent::Error(format!("Export failed: {}", e))).ok();
+                                }
+                            }
+                        });
+                    }
                     _ => {}
                 }
             }

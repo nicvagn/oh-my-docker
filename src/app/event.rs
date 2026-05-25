@@ -136,6 +136,7 @@ pub enum AppEvent {
     ScrollLogs(i32),
     JumpTop,
     JumpBottom,
+    ExportLogs(String),
 
     CloseShell,
     StartShell(String, String, String, String),
@@ -206,4 +207,5 @@ pub enum Command {
     SaveConfig,
     CheckUpdate,
     DownloadUpdate { version: String, download_url: String },
+    ExportLogs(String, Vec<String>),
 }

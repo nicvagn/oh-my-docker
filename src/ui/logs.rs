@@ -117,19 +117,19 @@ fn render_bottom_bar(frame: &mut Frame, area: Rect, paused: bool) {
     };
     let text = if paused {
         if area.width >= 50 {
-            "  r resume   / find   ↑↓/k j line   PgUp/PgDn page   g/G top/bottom   Esc back"
+            "  r resume   / find   ↑↓/k j line   PgUp/PgDn page   g/G top/bottom   s:export   Esc back"
         } else if area.width >= 36 {
-            "  r resume   / find   PgUp/PgDn page   Esc back"
+            "  r resume   / find   PgUp/PgDn page   s:export   Esc back"
         } else {
-            "  r resume   / find   Esc back"
+            "  r resume   / find   s:export   Esc back"
         }
     } else {
         if area.width >= 50 {
-            "  p pause   / find   ↑↓/k j line   PgUp/PgDn page   g/G top/bottom   Esc back"
+            "  p pause   / find   ↑↓/k j line   PgUp/PgDn page   g/G top/bottom   s:export   Esc back"
         } else if area.width >= 36 {
-            "  p pause   / find   PgUp/PgDn page   Esc back"
+            "  p pause   / find   PgUp/PgDn page   s:export   Esc back"
         } else {
-            "  p pause   / find   Esc back"
+            "  p pause   / find   s:export   Esc back"
         }
     };
     frame.render_widget(

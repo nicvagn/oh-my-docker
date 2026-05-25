@@ -452,6 +452,24 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
                 log.tail = true;
             }
         }
+        AppEvent::ExportLogs(container_id) => {
+            let buffer: Vec<String> = new_state.logs.as_ref()
+                .map(|l| l.buffer.iter().map(|e| e.message.clone()).collect())
+                .unwrap_or_default();
+            if buffer.is_empty() {
+                new_state.error = Some("No logs to export".to_string());
+                new_state.error_timer = 5;
+            } else {
+                let ts = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
+                let filename = format!("/tmp/omdocker_logs_{}_{}.log", container_id, ts);
+                let fname = filename.clone();
+                let lines = buffer.clone();
+                commands.push(Command::ExportLogs(fname, lines));
+            }
+        }
 
         // --- Events ---
         AppEvent::EventsUpdated(events) => {
