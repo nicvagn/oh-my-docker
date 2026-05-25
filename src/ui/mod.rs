@@ -16,6 +16,7 @@ pub mod statistics;
 pub mod networks;
 pub mod volumes;
 pub mod help;
+pub mod confirm_dialog;
 
 pub fn render(frame: &mut Frame, state: &mut AppState) {
     match state.mode_stack.current() {
@@ -56,7 +57,8 @@ pub fn render(frame: &mut Frame, state: &mut AppState) {
         Mode::Statistics => statistics::render(frame, &state.statistics),
         Mode::Networks => networks::render(frame, &state.networks),
         Mode::Volumes => volumes::render(frame, &state.volumes),
-       Mode::Help => help::render(frame, &mut state.help),
+        Mode::Help => help::render(frame, &mut state.help),
+        Mode::ConfirmDialog { .. } => confirm_dialog::render(frame, state.mode_stack.current()),
     }
 
     if let Some(ref update) = state.update_available {

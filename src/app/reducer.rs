@@ -1,4 +1,4 @@
-use crate::app::event::{AppEvent, Command, ImageRunField, ShellConfigField};
+use crate::app::event::{AppEvent, Command, ConfirmAction, ImageRunField, ShellConfigField};
 use crate::app::mode::Mode;
 use crate::app::state::{AppState, DetailsState, ImageRunState, LogState, ShellConfigState, ShellState};
 use crate::config::ContainerShellConfig;
@@ -169,6 +169,36 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
         AppEvent::Error(msg) => {
             new_state.error = Some(msg);
             new_state.error_timer = 5;
+        }
+
+        AppEvent::ShowConfirmDialog(prompt, action) => {
+            new_state.mode_stack.push(Mode::ConfirmDialog { prompt, action });
+        }
+        AppEvent::ConfirmYes => {
+            if let Mode::ConfirmDialog { action, .. } = new_state.mode_stack.current() {
+                let action = action.clone();
+                new_state.mode_stack.back();
+                match action {
+                    ConfirmAction::DeleteContainer(id) => {
+                        new_state.containers.deleting_containers.insert(id.clone());
+                        commands.push(Command::DeleteContainer(id));
+                    }
+                    ConfirmAction::RemoveImage(id) => {
+                        commands.push(Command::RemoveImage(id));
+                    }
+                    ConfirmAction::RemoveNetwork(id) => {
+                        commands.push(Command::RemoveNetwork(id));
+                    }
+                    ConfirmAction::RemoveVolume(name) => {
+                        commands.push(Command::RemoveVolume(name));
+                    }
+                }
+            }
+        }
+        AppEvent::ConfirmNo => {
+            if matches!(new_state.mode_stack.current(), Mode::ConfirmDialog { .. }) {
+                new_state.mode_stack.back();
+            }
         }
 
         // --- Containers ---

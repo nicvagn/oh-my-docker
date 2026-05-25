@@ -1,5 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use crate::app::event::{AppEvent, ImageRunField, ShellConfigField};
+use crate::app::event::{AppEvent, ConfirmAction, ImageRunField, ShellConfigField};
 use crate::app::mode::Mode;
 use crate::app::state::AppState;
 use crate::input::keys;
@@ -66,7 +66,10 @@ fn handle_containers_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             KeyCode::Char('d') => {
                 state.containers.filtered.get(state.containers.selected)
                     .and_then(|&idx| state.containers.items.get(idx))
-                    .map(|c| AppEvent::DeleteContainer(c.id.clone()))
+                    .map(|c| AppEvent::ShowConfirmDialog(
+                        format!("Delete container '{}'?", c.name),
+                        ConfirmAction::DeleteContainer(c.id.clone()),
+                    ))
             }
             KeyCode::Char('i') => Some(AppEvent::Navigate(Mode::Images)),
             KeyCode::Char('e') => Some(AppEvent::Navigate(Mode::Events)),
@@ -182,7 +185,10 @@ fn handle_images_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             KeyCode::Char('d') => {
                 state.images.filtered.get(state.images.selected)
                     .and_then(|&idx| state.images.items.get(idx))
-                    .map(|img| AppEvent::RemoveImage(img.id.clone()))
+                    .map(|img| AppEvent::ShowConfirmDialog(
+                        format!("Remove image '{}:{}'?", img.repository, img.tag),
+                        ConfirmAction::RemoveImage(img.id.clone()),
+                    ))
             }
             KeyCode::Char('/') => Some(AppEvent::ActivateImageFilter),
             KeyCode::Enter => {
@@ -312,7 +318,10 @@ fn handle_networks_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         }
         KeyCode::Char('d') => {
             state.networks.items.get(state.networks.selected)
-                .map(|n| AppEvent::RemoveNetwork(n.id.clone()))
+                .map(|n| AppEvent::ShowConfirmDialog(
+                    format!("Remove network '{}'?", n.name),
+                    ConfirmAction::RemoveNetwork(n.id.clone()),
+                ))
         }
         _ => None,
     }
@@ -331,8 +340,19 @@ fn handle_volumes_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         }
         KeyCode::Char('d') => {
             state.volumes.items.get(state.volumes.selected)
-                .map(|v| AppEvent::RemoveVolume(v.name.clone()))
+                .map(|v| AppEvent::ShowConfirmDialog(
+                    format!("Remove volume '{}'?", v.name),
+                    ConfirmAction::RemoveVolume(v.name.clone()),
+                ))
         }
+        _ => None,
+    }
+}
+
+fn handle_confirm_dialog_key(key: KeyEvent) -> Option<AppEvent> {
+    match key.code {
+        KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => Some(AppEvent::ConfirmYes),
+        KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => Some(AppEvent::ConfirmNo),
         _ => None,
     }
 }
@@ -404,5 +424,6 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         Mode::Networks => handle_networks_key(key, state),
         Mode::Volumes => handle_volumes_key(key, state),
         Mode::Help => handle_help_key(key),
+        Mode::ConfirmDialog { .. } => handle_confirm_dialog_key(key),
     }
 }

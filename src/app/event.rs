@@ -85,6 +85,14 @@ pub enum ImageRunField {
 }
 
 #[derive(Clone, Debug)]
+pub enum ConfirmAction {
+    DeleteContainer(String),
+    RemoveImage(String),
+    RemoveNetwork(String),
+    RemoveVolume(String),
+}
+
+#[derive(Clone, Debug)]
 pub enum AppEvent {
     Navigate(Mode),
     Back,
@@ -95,6 +103,10 @@ pub enum AppEvent {
     ScrollHelp(i32),
     Error(String),
 
+    ShowConfirmDialog(String, ConfirmAction),
+    ConfirmYes,
+    ConfirmNo,
+
     ContainersUpdated(Vec<ContainerSummary>),
     SelectContainer(usize),
     FilterContainers(String),
@@ -104,6 +116,7 @@ pub enum AppEvent {
     StopContainer(String),
     ContainerStopped(String),
     StartContainer(String),
+    #[allow(dead_code)]
     DeleteContainer(String),
     ContainerDeleted(String),
     ShowDetails,
@@ -131,6 +144,7 @@ pub enum AppEvent {
     SelectImage(usize),
     FilterImages(String),
     ActivateImageFilter,
+    #[allow(dead_code)]
     RemoveImage(String),
     RunImage(String),
     ImageRunFieldUpdate(ImageRunField, String),
@@ -151,9 +165,11 @@ pub enum AppEvent {
     StatisticsUpdated(Vec<StatEntry>),
     NetworksUpdated(Vec<NetworkEntry>),
     SelectNetwork(usize),
+    #[allow(dead_code)]
     RemoveNetwork(String),
     VolumesUpdated(Vec<VolumeEntry>),
     SelectVolume(usize),
+    #[allow(dead_code)]
     RemoveVolume(String),
 }
 
