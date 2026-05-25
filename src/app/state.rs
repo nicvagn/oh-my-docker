@@ -80,6 +80,7 @@ pub struct ImageRunState {
     pub container_name: String,
     pub autoremove: bool,
     pub field_focus: usize,
+    pub validation_errors: Vec<(usize, String)>,
 }
 
 #[derive(Clone, Debug)]

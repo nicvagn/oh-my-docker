@@ -398,6 +398,7 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
                 container_name: String::new(),
                 autoremove: true,
                 field_focus: 0,
+                validation_errors: Vec::new(),
             });
             new_state.mode_stack.push(Mode::ImageRun(id));
         }
@@ -484,7 +485,34 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
             new_state.mode_stack.push(Mode::Shell(id));
         }
         AppEvent::ImageRunSubmit => {
+            let mut errors: Vec<(usize, String)> = Vec::new();
             if let Some(ref run) = new_state.image_run {
+                for line in run.port_mapping.lines() {
+                    let line = line.trim();
+                    if line.is_empty() { continue; }
+                    let parts: Vec<&str> = line.split(':').collect();
+                    if parts.len() < 1 || parts.len() > 3 {
+                        errors.push((5, format!("Invalid port '{}': use HOST:CONTAINER or CONTAINER", line)));
+                        continue;
+                    }
+                    let container_port = parts.last().unwrap().trim();
+                    if container_port.parse::<u16>().is_err() {
+                        errors.push((5, format!("Invalid container port '{}' in '{}': must be a number", container_port, line)));
+                    }
+                }
+                for line in run.volumes.lines() {
+                    let line = line.trim();
+                    if line.is_empty() { continue; }
+                    if !line.contains(':') {
+                        errors.push((6, format!("Invalid volume '{}': must be HOST:CONTAINER[:ro|:rw]", line)));
+                    }
+                }
+            }
+            if !errors.is_empty() {
+                if let Some(ref mut run) = new_state.image_run {
+                    run.validation_errors = errors;
+                }
+            } else if let Some(ref run) = new_state.image_run {
                 commands.push(Command::CreateContainer(crate::app::event::ContainerOpts {
                     image: run.image_id.clone(),
                     cmd: run.command.clone(),
@@ -497,9 +525,9 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
                     name: run.container_name.clone(),
                     autoremove: run.autoremove,
                 }));
+                new_state.image_run = None;
+                new_state.mode_stack.back();
             }
-            new_state.image_run = None;
-            new_state.mode_stack.back();
         }
         AppEvent::ImageRunFieldUpdate(field, value) => {
             if let Some(ref mut run) = new_state.image_run {

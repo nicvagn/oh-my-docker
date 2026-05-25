@@ -6,6 +6,10 @@ use ratatui::widgets::{Block, Borders, Cell, Paragraph, BorderType, Row, Table, 
 
 use crate::app::state::{ImageRunState, ImagesState};
 
+fn field_has_error(run: &ImageRunState, field: usize) -> Option<&str> {
+    run.validation_errors.iter().find(|(f, _)| *f == field).map(|(_, msg)| msg.as_str())
+}
+
 pub fn render_run(frame: &mut Frame, run: &ImageRunState) {
     let block = Block::default()
         .title(format!(" RUN CONTAINER — {} ", &run.image_id[..12.min(run.image_id.len())]))
@@ -100,10 +104,17 @@ pub fn render_run(frame: &mut Frame, run: &ImageRunState) {
         format!(" {} Port Mapping", if run.field_focus == 5 { "▸" } else { " " }),
         Style::default().fg(if run.field_focus == 5 { Color::White } else { Color::DarkGray }),
     )));
+    let port_fg = if field_has_error(run, 5).is_some() { Color::Red } else { Color::Cyan };
     lines.push(Line::from(Span::styled(
         format!("    {}", port_display),
-        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        Style::default().fg(port_fg).add_modifier(Modifier::BOLD),
     )));
+    if let Some(err) = field_has_error(run, 5) {
+        lines.push(Line::from(Span::styled(
+            format!("    ▲ {}", err),
+            Style::default().fg(Color::Red),
+        )));
+    }
 
     // --- Field: Volumes ---
     let vol_display = if run.volumes.is_empty() {
@@ -115,10 +126,17 @@ pub fn render_run(frame: &mut Frame, run: &ImageRunState) {
         format!(" {} Volumes", if run.field_focus == 6 { "▸" } else { " " }),
         Style::default().fg(if run.field_focus == 6 { Color::White } else { Color::DarkGray }),
     )));
+    let vol_fg = if field_has_error(run, 6).is_some() { Color::Red } else { Color::Cyan };
     lines.push(Line::from(Span::styled(
         format!("    {}", vol_display),
-        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        Style::default().fg(vol_fg).add_modifier(Modifier::BOLD),
     )));
+    if let Some(err) = field_has_error(run, 6) {
+        lines.push(Line::from(Span::styled(
+            format!("    ▲ {}", err),
+            Style::default().fg(Color::Red),
+        )));
+    }
 
     // --- Field: Container Name ---
     let name_display = if run.container_name.is_empty() {
@@ -184,6 +202,16 @@ pub fn render_run(frame: &mut Frame, run: &ImageRunState) {
         lines.push(Line::from(Span::styled(
             format!("  {}", help),
             Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    // Error summary
+    if !run.validation_errors.is_empty() {
+        lines.push(Line::from(""));
+        let count = run.validation_errors.len();
+        lines.push(Line::from(Span::styled(
+            format!("  ⚠ {} error{} — fix before submitting", count, if count == 1 { "" } else { "s" }),
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         )));
     }
 
