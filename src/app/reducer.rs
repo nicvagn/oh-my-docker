@@ -467,15 +467,15 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
             new_state.error = Some(format!("Pruned {} unused images", count));
             new_state.error_timer = 10;
         }
-        AppEvent::RunImage(id) => {
-            let image_base = crate::util::image_base_name(&id).to_string();
+        AppEvent::RunImage(repository, tag) => {
+            let image_id = format!("{}:{}", repository, tag);
             let latest = new_state.config.latest_shell.clone().unwrap_or_else(|| "bash".to_string());
-            let per_image = new_state.config.images.get(&image_base).cloned().unwrap_or_default();
+            let per_image = new_state.config.images.get(&repository).cloned().unwrap_or_default();
             let shell = per_image.shell.unwrap_or(latest);
             let user = per_image.user.unwrap_or_default();
             let workdir = per_image.workdir.unwrap_or_default();
             new_state.image_run = Some(ImageRunState {
-                image_id: id.clone(),
+                image_id: image_id.clone(),
                 command: String::new(),
                 shell,
                 user,
@@ -488,7 +488,7 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
                 field_focus: 0,
                 validation_errors: Vec::new(),
             });
-            new_state.mode_stack.push(Mode::ImageRun(id));
+            new_state.mode_stack.push(Mode::ImageRun(image_id));
         }
 
         AppEvent::TogglePause => {

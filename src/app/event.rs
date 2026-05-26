@@ -166,7 +166,7 @@ pub enum AppEvent {
     RemoveDanglingImages,
     PruneUnusedImages,
     PrunedImages(usize),
-    RunImage(String),
+    RunImage(String, String),
     ImageRunFieldUpdate(ImageRunField, String),
     ImageRunToggleAutoremove,
     ImageRunFocusNext,

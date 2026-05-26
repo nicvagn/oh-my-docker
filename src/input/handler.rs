@@ -233,7 +233,7 @@ fn handle_images_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             KeyCode::Char('r') => {
                 state.images.filtered.get(state.images.selected)
                     .and_then(|&idx| state.images.items.get(idx))
-                    .map(|img| AppEvent::RunImage(img.id.clone()))
+                    .map(|img| AppEvent::RunImage(img.repository.clone(), img.tag.clone()))
             }
             KeyCode::Char('d') => {
                 state.images.filtered.get(state.images.selected)
@@ -255,7 +255,7 @@ fn handle_images_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             KeyCode::Enter => {
                 state.images.filtered.get(state.images.selected)
                     .and_then(|&idx| state.images.items.get(idx))
-                    .map(|img| AppEvent::RunImage(img.id.clone()))
+                    .map(|img| AppEvent::RunImage(img.repository.clone(), img.tag.clone()))
             }
             _ => None,
         }
