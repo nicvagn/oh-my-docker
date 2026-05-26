@@ -12,11 +12,7 @@ pub fn render(frame: &mut Frame, state: &EventsState) {
     } else {
         String::new()
     };
-    let title = if state.paused {
-        format!(" DOCKER EVENTS (PAUSED{}) ", search_label)
-    } else {
-        format!(" DOCKER EVENTS (LIVE{}) ", search_label)
-    };
+    let title = format!(" DOCKER EVENTS{} ", search_label);
 
     let block = Block::default()
         .title(title)
@@ -33,7 +29,7 @@ pub fn render(frame: &mut Frame, state: &EventsState) {
             Line::from(""),
         ]);
         frame.render_widget(Paragraph::new(text).block(block), frame.area());
-        render_bottom_bar(frame, inner, state.paused);
+        render_bottom_bar(frame, inner);
         return;
     }
 
@@ -86,36 +82,26 @@ pub fn render(frame: &mut Frame, state: &EventsState) {
     let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: false });
     frame.render_widget(paragraph, frame.area());
 
-    render_bottom_bar(frame, inner, state.paused);
+    render_bottom_bar(frame, inner);
 
     if state.filter_active {
         render_search_bar(frame, inner, &state.filter);
     }
 }
 
-fn render_bottom_bar(frame: &mut Frame, area: Rect, paused: bool) {
+fn render_bottom_bar(frame: &mut Frame, area: Rect) {
     let bar = Rect {
         x: area.x + 1,
         y: area.y + area.height.saturating_sub(1),
         width: area.width.saturating_sub(2),
         height: 1,
     };
-    let text = if paused {
-        if area.width >= 55 {
-            "  r resume   / filter   e:export   ↑↓/k j line   PgUp/PgDn page   g/G top/bottom   Esc back"
-        } else if area.width >= 40 {
-            "  r resume   / filter   e:export   PgUp/PgDn page   Esc back"
-        } else {
-            "  r resume   / filter   e:export   Esc back"
-        }
+    let text = if area.width >= 55 {
+        "  / filter   e:export   ↑↓/k j line   PgUp/PgDn page   g/G top/bottom   Esc back"
+    } else if area.width >= 40 {
+        "  / filter   e:export   PgUp/PgDn page   Esc back"
     } else {
-        if area.width >= 55 {
-            "  p pause   / filter   e:export   ↑↓/k j line   PgUp/PgDn page   g/G top/bottom   Esc back"
-        } else if area.width >= 40 {
-            "  p pause   / filter   e:export   PgUp/PgDn page   Esc back"
-        } else {
-            "  p pause   / filter   e:export   Esc back"
-        }
+        "  / filter   e:export   Esc back"
     };
     frame.render_widget(
         Paragraph::new(text).style(Style::default().fg(Color::DarkGray)),

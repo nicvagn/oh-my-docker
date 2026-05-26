@@ -574,7 +574,7 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
         }
 
         // --- Events ---
-       AppEvent::EventsUpdated(events) => {
+        AppEvent::EventsUpdated(events) => {
             for e in events {
                 new_state.events.buffer.push(e);
             }
@@ -582,9 +582,6 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
                 let excess = new_state.events.buffer.len() - new_state.events.max_events;
                 new_state.events.buffer.drain(0..excess);
             }
-        }
-        AppEvent::ToggleEventsPause => {
-            new_state.events.paused = !new_state.events.paused;
         }
         AppEvent::ExportEvents => {
             let buffer: Vec<String> = new_state.events.buffer.iter().map(|e| {

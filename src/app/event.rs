@@ -180,7 +180,6 @@ pub enum AppEvent {
     ActivateEventsFilter,
     EventsFilterSubmit,
     FilterEvents(String),
-    ToggleEventsPause,
     ExportEvents,
     ScrollEvents(i32),
     ToggleLogTimestamps,

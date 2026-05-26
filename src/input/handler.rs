@@ -357,7 +357,6 @@ fn handle_events_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         }
     } else {
         match key.code {
-            KeyCode::Char(' ') => Some(AppEvent::ToggleEventsPause),
             KeyCode::Char('e') => Some(AppEvent::ExportEvents),
             KeyCode::Char('g') => Some(AppEvent::JumpTop),
             KeyCode::Char('G') => Some(AppEvent::JumpBottom),
