@@ -36,19 +36,24 @@ Requires Docker to be installed and the user to have access to the Docker socket
 
 ## Features
 
-- **Container list** — browse running/stopped containers with fuzzy search
+- **Container list** — browse running/stopped containers with fuzzy search, optional initial filter via CLI arg
 - **Container details** — inspect metadata, env, volumes, networks, ports, labels; scrollable with `j`/`k`/`PgUp`/`PgDn`
-- **Live logs** — streaming with follow mode, pause, search, scroll, jump-to-top/bottom
+- **Multi-select mode** — press `Space` to enter selection mode, select individual containers, batch start/stop/delete
+- **Live logs** — streaming with follow mode, pause, search, scroll, jump-to-top/bottom, timestamp toggle (`T`), export to file (`Ctrl+S`)
 - **Shell access** — `docker exec -it` inside any container with configurable shell (`sh`, `bash`, `/bin/zsh`), user (container default, `root`, `host` → `uid:gid`, or custom `user:group`), and working directory. Config per container is persisted to `~/.config/omdocker/omdocker.toml`. TUI suspends, shell runs in the parent terminal, TUI resumes on exit.
-- **Image management** — list, remove, run containers from images with configurable command/env/ports/volumes/name/auto-remove
-- **Docker events** — real-time event stream with type filtering and pause
-- **Statistics** — live `docker stats` view with CPU %, memory, network I/O, block I/O, PIDs
+- **Image management** — list, remove, run containers from images with configurable command/env/ports/volumes/name/auto-remove and inline validation
+- **Dangling/prune images** — remove dangling (`<none>`) images with `D`, prune all unused images with `p`
+- **Docker events** — real-time event stream with type filtering, scroll, export, pause, and emoji icons
+- **Statistics** — live `docker stats` view with CPU %, memory, network I/O, block I/O, PIDs; sortable by column with `←`/`→`, toggle direction with `t`
 - **Networks** — list and delete Docker networks
 - **Volumes** — list and delete Docker volumes
-- **Container lifecycle** — start, stop (shows "stopping..."), restart, delete (shows "deleting...")
+- **Container lifecycle** — start, stop (shows "stopping..."), restart, delete (shows "deleting...") with confirmation dialogs
+- **Docker reconnection** — automatic periodic reconnection with visual feedback when Docker is unavailable
+- **Persistent errors** — red error toasts for critical messages, dismiss with any key; auto-dismissing info toasts
 - **Self-update** — background check for new versions on startup (configurable), `U` to check/download, auto-replaces binary
 - **Keyboard-first** — all actions available via keys, no mouse needed
 - **Fast** — async polling, non-blocking UI, ring buffers for logs/events
+- **CLI** — `--help`/`-h` and `--version`/`-V` flags
 
 ## Keybindings
 
@@ -71,7 +76,10 @@ Requires Docker to be installed and the user to have access to the Docker socket
 | `s` | Open shell (`docker exec -it`) |
 | `t` | Start/stop container (shows "stopping..." while stopping) |
 | `r` | Restart container |
-| `d` | Delete container (shows "deleting...") |
+| `d` | Delete container (shows "deleting...") with confirmation |
+| `Space` | Toggle selection mode; in selection mode, toggle single container |
+| `Ctrl+A` | Select all filtered containers (in selection mode) |
+| `Esc` | Exit selection mode |
 | `i` | Switch to images view |
 | `e` | Switch to events view |
 | `%` | Switch to statistics view |
@@ -102,6 +110,9 @@ Requires Docker to be installed and the user to have access to the Docker socket
 | `/` | Search within logs |
 | `j` / `↓` | Scroll down |
 | `k` / `↑` | Scroll up |
+| `T` | Toggle timestamps on/off |
+| `Ctrl+S` | Export logs to `/tmp/omdocker_logs_*.log` |
+| `PgUp` / `PgDn` | Scroll 20 lines |
 
 ### Images
 | Key | Action |
@@ -109,7 +120,9 @@ Requires Docker to be installed and the user to have access to the Docker socket
 | `j` / `↓` | Navigate down |
 | `k` / `↑` | Navigate up |
 | `r` / `Enter` | Run container from image (opens config form) |
-| `d` | Remove image |
+| `d` | Remove image with confirmation |
+| `D` | Remove all dangling (`<none>`) images |
+| `p` | Prune all unused images |
 | `/` | Activate fuzzy search |
 
 ### Image Run Form
@@ -140,14 +153,21 @@ Three fields: **Shell** (`sh`, `bash`, `/bin/zsh`, etc.), **User** (empty=defaul
 |-----|--------|
 | `Space` | Pause/resume stream |
 | `/` | Filter events |
-| `j` / `k` | Scroll |
+| `j` / `↓` | Scroll down |
+| `k` / `↑` | Scroll up |
+| `PgUp` / `PgDn` | Scroll 20 lines |
+| `g` | Jump to top |
+| `G` | Jump to bottom |
+| `e` | Export events to `/tmp/omdocker_events_*.log` |
 
 ### Statistics
 | Key | Action |
 |-----|--------|
 | `Esc` | Back to container list |
+| `←` / `→` | Cycle sort column (name, CPU, memory, net RX, net TX, block read, block write, PIDs) |
+| `t` | Toggle sort direction (ascending/descending) |
 
-Live stats for running containers (CPU, memory, network, block I/O, PIDs), updated every 2s.
+Live stats for running containers (CPU, memory, network, block I/O, PIDs), updated every 2s. Sorted columns show an arrow indicator.
 
 ### Networks
 | Key | Action |
@@ -177,7 +197,10 @@ src/
     mode.rs            — Mode enum + ModeStack (back navigation, max depth 10)
     state.rs           — AppState with all sub-states
     event.rs           — AppEvent enum + data types + Command enum
-    reducer.rs         — Pure state transition function
+    navigation.rs      — NavigationState (groups modal sub-states)
+    reducer.rs         — Thin dispatcher, delegates to per-domain reducers
+    reducers/          — Per-domain reducers (container, image, log, event, statistics, network, volume, shell, navigation)
+    handlers/          — Per-domain input handlers (container, image, log, event, statistics, network, volume, shell, navigation)
   ui/
     mod.rs             — Shared render utilities (filter bar)
     containers.rs      — Container table with fuzzy search
@@ -203,7 +226,7 @@ src/
   search/
     fuzzy.rs           — fuzzy-matcher wrapper
   input/
-    handler.rs         — Mode-based key dispatch
+    handler.rs         — Thin dispatcher, routes keys to app::handlers::* by mode
     keys.rs            — Action enum + global keybindings
   runtime/
     tasks.rs           — Async task spawners (pollers, actions, streams)
@@ -221,7 +244,8 @@ Async Docker operations (container polling, log streaming, event streaming) run 
 background tokio tasks and communicate with the main loop via `mpsc` channels.
 
 Each screen is an independent `Mode` in a state machine. Navigation between screens
-uses a `ModeStack` (max depth 10) for back-button support.
+uses a `ModeStack` (max depth 10) for back-button support. Destructive actions
+(delete, remove) show a confirmation dialog before executing.
 
 Shell access suspends the TUI entirely: the terminal exits raw mode/alternate screen,
 `docker exec -it` runs as a blocking child process in the parent terminal, and on
