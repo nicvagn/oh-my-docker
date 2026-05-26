@@ -1,0 +1,214 @@
+use crate::app::event::{AppEvent, Command, ConfirmAction};
+use crate::app::mode::Mode;
+use crate::app::state::AppState;
+
+pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
+    let mut commands = Vec::new();
+    match event {
+        AppEvent::Navigate(mode @ Mode::Shell(_)) => {
+            if let Mode::Shell(id) = &mode {
+                state.navigation.shell = Some(crate::app::state::ShellState {
+                    container_id: id.clone(),
+                    active: true,
+                    stop_on_exit: false,
+                    shell: "bash".to_string(),
+                    user: String::new(),
+                    workdir: String::new(),
+                });
+            }
+            state.navigation.mode_stack.push(mode.clone());
+        }
+        AppEvent::Navigate(mode @ Mode::Logs(_)) => {
+            if let Mode::Logs(id) = &mode {
+                if let Some(ref logs) = state.navigation.logs {
+                    if let Some(handle) = state.log_streams.remove(&logs.container_id) {
+                        handle.abort();
+                    }
+                }
+                state.navigation.logs = Some(crate::app::state::LogState {
+                    container_id: id.clone(),
+                    buffer: Vec::new(),
+                    max_lines: 10000,
+                    paused: false,
+                    search: String::new(),
+                    search_active: false,
+                    scroll_offset: 0,
+                    tail: true,
+                    show_timestamps: false,
+                    viewport_height: 0,
+                });
+                commands.push(Command::FetchLogs(id.clone()));
+            }
+            state.navigation.mode_stack.push(mode.clone());
+        }
+        AppEvent::Navigate(mode @ Mode::ShellConfig(_)) => {
+            if let Mode::ShellConfig(id) = &mode {
+                let container = state.containers.items.iter().find(|c| c.id == *id);
+                let name = container.map(|c| c.name.clone()).unwrap_or_default();
+                let image_base = container.map(|c| crate::util::image_base_name(&c.image).to_string());
+                let latest = state.config.latest_shell.clone().unwrap_or_else(|| "bash".to_string());
+                let per_container = state.config.containers.get(&name).cloned().unwrap_or_default();
+                let per_image = image_base.as_ref()
+                    .and_then(|ib| state.config.images.get(ib).cloned())
+                    .unwrap_or_default();
+                let shell = per_container.shell.clone()
+                    .or_else(|| per_image.shell.clone())
+                    .unwrap_or(latest);
+                let user = per_container.user.clone()
+                    .or_else(|| per_image.user.clone())
+                    .unwrap_or_default();
+                let workdir = per_container.workdir.clone()
+                    .or_else(|| per_image.workdir.clone())
+                    .unwrap_or_default();
+                state.navigation.shell_config = Some(crate::app::state::ShellConfigState {
+                    container_id: id.clone(),
+                    shell,
+                    user,
+                    workdir,
+                    field_focus: 0,
+                });
+            }
+            state.navigation.mode_stack.push(mode.clone());
+        }
+        AppEvent::Navigate(mode) => state.navigation.mode_stack.push(mode.clone()),
+        AppEvent::Back => {
+            if let Some(ref logs) = state.navigation.logs {
+                if let Some(handle) = state.log_streams.remove(&logs.container_id) {
+                    handle.abort();
+                }
+            }
+            state.navigation.logs = None;
+            state.navigation.shell_config = None;
+            state.navigation.image_run = None;
+            state.navigation.mode_stack.back();
+        }
+
+        AppEvent::ShowHelp => state.navigation.mode_stack.push(Mode::Help),
+        AppEvent::HideHelp if *state.navigation.mode_stack.current() == Mode::Help => {
+            state.navigation.mode_stack.back();
+        }
+        AppEvent::ScrollHelp(delta) => {
+            state.navigation.help.scroll_offset = crate::util::scroll_offset(state.navigation.help.scroll_offset, *delta, 10000);
+        }
+
+        AppEvent::ShowConfirmDialog(prompt, action) => {
+            state.navigation.mode_stack.push(Mode::ConfirmDialog { prompt: prompt.clone(), action: action.clone() });
+        }
+        AppEvent::ConfirmYes => {
+            if let Mode::ConfirmDialog { action, .. } = state.navigation.mode_stack.current() {
+                let action = action.clone();
+                state.navigation.mode_stack.back();
+                match action {
+                    ConfirmAction::DeleteContainer(id) => {
+                        if id.is_empty() {
+                            if !state.containers.selected_ids.is_empty() {
+                                let ids: Vec<String> = state.containers.selected_ids.iter().cloned().collect();
+                                state.containers.selected_ids.clear();
+                                state.containers.selection_mode = false;
+                                commands.push(Command::BatchDeleteContainers(ids));
+                            }
+                        } else {
+                            state.containers.deleting_containers.insert(id.clone());
+                            commands.push(Command::DeleteContainer(id));
+                        }
+                    }
+                    ConfirmAction::BatchDeleteContainers => {
+                        if !state.containers.selected_ids.is_empty() {
+                            let ids: Vec<String> = state.containers.selected_ids.iter().cloned().collect();
+                            state.containers.selected_ids.clear();
+                            state.containers.selection_mode = false;
+                            commands.push(Command::BatchDeleteContainers(ids));
+                        }
+                    }
+                    ConfirmAction::RemoveImage(id) => {
+                        if id.is_empty() {
+                            commands.push(Command::RemoveDanglingImages);
+                        } else {
+                            commands.push(Command::RemoveImage(id));
+                        }
+                    }
+                    ConfirmAction::RemoveDanglingImages => commands.push(Command::RemoveDanglingImages),
+                    ConfirmAction::PruneUnusedImages => commands.push(Command::PruneUnusedImages),
+                    ConfirmAction::RemoveNetwork(id) => commands.push(Command::RemoveNetwork(id)),
+                    ConfirmAction::RemoveVolume(name) => commands.push(Command::RemoveVolume(name)),
+                }
+            }
+        }
+        AppEvent::ConfirmNo => {
+            if matches!(state.navigation.mode_stack.current(), Mode::ConfirmDialog { .. }) {
+                state.navigation.mode_stack.back();
+            }
+        }
+
+        AppEvent::ShowDetails => {
+            if let Some(&idx) = state.containers.filtered.get(state.containers.selected) {
+                if let Some(container) = state.containers.items.get(idx) {
+                    let id = container.id.clone();
+                    state.navigation.mode_stack.push(Mode::ContainerDetails(id.clone()));
+                    state.navigation.details = Some(crate::app::state::DetailsState {
+                        id: id.clone(),
+                        container_id: container.name.clone(),
+                        json: None,
+                        scroll_offset: 0,
+                    });
+                    commands.push(Command::InspectContainer(id));
+                }
+            }
+        }
+        AppEvent::Inspected(json, name) => {
+            let prev = state.navigation.details.take();
+            let existing_id = prev.as_ref().map(|d| d.id.clone()).unwrap_or_default();
+            let existing_scroll = prev.as_ref().map(|d| d.scroll_offset).unwrap_or(0);
+            state.navigation.details = Some(crate::app::state::DetailsState {
+                id: existing_id,
+                container_id: name.clone(),
+                json: Some(serde_json::to_string_pretty(&json).unwrap_or_default()),
+                scroll_offset: existing_scroll,
+            });
+        }
+        AppEvent::ScrollDetails(delta) => {
+            if let Some(ref mut d) = state.navigation.details {
+                d.scroll_offset = crate::util::scroll_offset(d.scroll_offset, *delta, 10000);
+            }
+        }
+
+        AppEvent::FilterSubmit(sel) => {
+            match state.navigation.mode_stack.current() {
+                Mode::Containers => {
+                    state.containers.filter_active = false;
+                    if let Some(idx) = sel {
+                        if *idx < state.containers.filtered.len() {
+                            state.containers.selected = *idx;
+                        }
+                    }
+                }
+                Mode::Images => {
+                    state.images.filter_active = false;
+                    if let Some(idx) = sel {
+                        if *idx < state.images.filtered.len() {
+                            state.images.selected = *idx;
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        AppEvent::JumpTop => {
+            state.events.scroll_offset = state.events.buffer.len();
+            if let Some(ref mut log) = state.navigation.logs {
+                log.scroll_offset = log.buffer.len();
+                log.tail = false;
+            }
+        }
+        AppEvent::JumpBottom => {
+            state.events.scroll_offset = 0;
+            if let Some(ref mut log) = state.navigation.logs {
+                log.scroll_offset = 0;
+                log.tail = true;
+            }
+        }
+        _ => {}
+    }
+    commands
+}

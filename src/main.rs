@@ -144,9 +144,9 @@ async fn main() -> Result<()> {
         }
 
           // Handle shell exec: suspend TUI, run docker exec with config, re-init
-        if state.shell.as_ref().map(|s| s.active).unwrap_or(false) {
-            let shell = state.shell.as_ref().unwrap().clone();
-            state.shell.as_mut().unwrap().active = false;
+        if state.navigation.shell.as_ref().map(|s| s.active).unwrap_or(false) {
+            let shell = state.navigation.shell.as_ref().unwrap().clone();
+            state.navigation.shell.as_mut().unwrap().active = false;
             restore_terminal()?;
             let mut cmd = std::process::Command::new("docker");
             cmd.args(["exec", "-it"]);
@@ -195,7 +195,9 @@ fn process_event(mut state: app::state::AppState, event: app::event::AppEvent, d
     state = new_state;
     let cmds: Vec<Command> = commands.into_iter().filter(|c| !matches!(c, Command::SaveConfig)).collect();
     if let Some(handle) = handle_commands(cmds, docker, tx) {
-        state.log_streams.insert(state.logs.as_ref().map(|l| l.container_id.clone()).unwrap_or_default(), handle);
+        if let Some(ref logs) = state.navigation.logs {
+            state.log_streams.insert(logs.container_id.clone(), handle);
+        }
     }
     if needs_save {
         state.config.save();

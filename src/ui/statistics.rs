@@ -72,15 +72,11 @@ pub fn render(frame: &mut Frame, state: &StatisticsState) {
         .enumerate()
         .map(|(i, h)| {
             let mut cell = Cell::from(*h).style(header_style);
-            let is_current = match (i, current_sort) {
-                (0, StatSort::Name) => true,
-                (1, StatSort::Cpu) => true,
-                (2, StatSort::Memory) => true,
-                (3, StatSort::NetRx) | (3, StatSort::NetTx) => true,
-                (4, StatSort::BlockRead) | (4, StatSort::BlockWrite) => true,
-                (5, StatSort::Pids) => true,
-                _ => false,
-            };
+            let is_current = matches!((i, current_sort),
+                (0, StatSort::Name) | (1, StatSort::Cpu) | (2, StatSort::Memory)
+                | (3, StatSort::NetRx) | (3, StatSort::NetTx)
+                | (4, StatSort::BlockRead) | (4, StatSort::BlockWrite)
+                | (5, StatSort::Pids));
             if is_current {
                 let arrow = if ascending { " \u{25b4}" } else { " \u{25be}" };
                 cell = Cell::from(format!("{}{}", h, arrow)).style(header_style.fg(Color::Yellow));

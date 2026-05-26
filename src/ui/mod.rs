@@ -19,17 +19,17 @@ pub mod help;
 pub mod confirm_dialog;
 
 pub fn render(frame: &mut Frame, state: &mut AppState) {
-    match state.mode_stack.current() {
+    match state.navigation.mode_stack.current() {
         Mode::Containers => containers::render(frame, &state.containers, state.tick_count),
         Mode::ContainerDetails(_) => {
-            if let Some(ref mut details) = state.details {
+            if let Some(ref mut details) = state.navigation.details {
                 container_details::render(frame, details, &state.containers);
             } else {
                 container_details::render_placeholder(frame);
             }
         }
         Mode::Logs(_) => {
-            if let Some(ref mut logs) = state.logs {
+            if let Some(ref mut logs) = state.navigation.logs {
                 logs::render(frame, logs);
             } else {
                 logs_render_placeholder(frame);
@@ -37,19 +37,19 @@ pub fn render(frame: &mut Frame, state: &mut AppState) {
         }
         Mode::Images => images::render(frame, &state.images),
         Mode::ImageRun(_) => {
-            if let Some(ref run) = state.image_run {
+            if let Some(ref run) = state.navigation.image_run {
                 images::render_run(frame, run);
             }
         }
         Mode::Shell(_) => {
-            if let Some(ref shell) = state.shell {
+            if let Some(ref shell) = state.navigation.shell {
                 shell::render(frame, shell);
             } else {
                 shell_render_placeholder(frame);
             }
         }
         Mode::ShellConfig(_) => {
-            if let Some(ref cfg) = state.shell_config {
+            if let Some(ref cfg) = state.navigation.shell_config {
                 shell_config::render(frame, cfg);
             }
         }
@@ -57,8 +57,8 @@ pub fn render(frame: &mut Frame, state: &mut AppState) {
         Mode::Statistics => statistics::render(frame, &state.statistics),
         Mode::Networks => networks::render(frame, &state.networks),
         Mode::Volumes => volumes::render(frame, &state.volumes),
-        Mode::Help => help::render(frame, &mut state.help),
-        Mode::ConfirmDialog { .. } => confirm_dialog::render(frame, state.mode_stack.current()),
+        Mode::Help => help::render(frame, &mut state.navigation.help),
+        Mode::ConfirmDialog { .. } => confirm_dialog::render(frame, state.navigation.mode_stack.current()),
     }
 
     if let Some(ref update) = state.update_available {

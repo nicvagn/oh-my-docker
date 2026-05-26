@@ -4,7 +4,7 @@ use tokio::task::AbortHandle;
 
 use crate::config::OmdockerConfig;
 use crate::app::event::{ContainerSummary, ImageEntry, LogEntry, DockerEvent, StatEntry, NetworkEntry, VolumeEntry};
-use crate::app::mode::ModeStack;
+use crate::app::navigation::NavigationState;
 
 #[derive(Clone, Debug)]
 pub struct ContainersState {
@@ -191,19 +191,13 @@ pub struct HelpState {
 
 #[derive(Clone, Debug)]
 pub struct AppState {
-    pub mode_stack: ModeStack,
+    pub navigation: NavigationState,
     pub containers: ContainersState,
-    pub details: Option<DetailsState>,
-    pub logs: Option<LogState>,
     pub images: ImagesState,
-    pub image_run: Option<ImageRunState>,
     pub events: EventsState,
-    pub shell: Option<ShellState>,
-    pub shell_config: Option<ShellConfigState>,
     pub statistics: StatisticsState,
     pub networks: NetworksState,
     pub volumes: VolumesState,
-    pub help: HelpState,
     pub config: OmdockerConfig,
     pub update_available: Option<(String, String)>,
     pub error: Option<String>,
@@ -217,19 +211,13 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> Self {
        Self {
-            mode_stack: ModeStack::new(),
+            navigation: NavigationState::new(),
              containers: ContainersState::default(),
-            details: None,
-            logs: None,
             images: ImagesState::default(),
-            image_run: None,
             events: EventsState::default(),
             statistics: StatisticsState::default(),
             networks: NetworksState::default(),
             volumes: VolumesState::default(),
-            help: HelpState::default(),
-            shell: None,
-            shell_config: None,
             config: OmdockerConfig::default(),
             update_available: None,
             error: None,
