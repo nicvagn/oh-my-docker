@@ -22,6 +22,8 @@ pub fn render(frame: &mut Frame, state: &VolumesState) {
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(Color::Cyan));
 
+    let inner = block.inner(area);
+
     if state.items.is_empty() && !state.loading {
         let text = Text::from(vec![
             Line::from(Span::styled("  No volumes found", Style::default().fg(Color::Yellow))),
@@ -74,13 +76,13 @@ pub fn render(frame: &mut Frame, state: &VolumesState) {
     let mut table_state = TableState::new().with_selected(state.selected);
     frame.render_stateful_widget(table, area, &mut table_state);
 
-    render_footer(frame, area);
+    render_footer(frame, inner);
 }
 
 fn render_footer(frame: &mut Frame, area: Rect) {
     let footer = Rect {
         x: area.x,
-        y: area.height.saturating_sub(1),
+        y: area.y + area.height.saturating_sub(1),
         width: area.width,
         height: 1,
     };

@@ -320,13 +320,13 @@ pub fn render(frame: &mut Frame, state: &ImagesState) {
         crate::ui::render_filter_bar(frame, inner, &state.filter, "search");
     }
 
-    render_footer(frame, area);
+    render_footer(frame, inner);
 }
 
 fn render_footer(frame: &mut Frame, area: Rect) {
     let footer = Rect {
         x: area.x,
-        y: area.height.saturating_sub(1),
+        y: area.y + area.height.saturating_sub(1),
         width: area.width,
         height: 1,
     };

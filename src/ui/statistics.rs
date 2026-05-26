@@ -39,6 +39,8 @@ pub fn render(frame: &mut Frame, state: &StatisticsState) {
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(Color::Cyan));
 
+    let inner = block.inner(area);
+
     if state.items.is_empty() && !state.loading {
         let text = Text::from(vec![
             Line::from(Span::styled("  No running containers", Style::default().fg(Color::Yellow))),
@@ -145,9 +147,9 @@ pub fn render(frame: &mut Frame, state: &StatisticsState) {
     frame.render_widget(table, area);
 
     let footer = Rect {
-        x: area.x,
-        y: area.height.saturating_sub(1),
-        width: area.width,
+        x: inner.x,
+        y: inner.y + inner.height.saturating_sub(1),
+        width: inner.width,
         height: 1,
     };
     frame.render_widget(

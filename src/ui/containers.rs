@@ -171,13 +171,13 @@ pub fn render(frame: &mut Frame, state: &ContainersState, tick_count: u64) {
         crate::ui::render_filter_bar(frame, inner, &state.filter, "search");
     }
 
-    render_footer(frame, area, state.selection_mode);
+    render_footer(frame, inner, state.selection_mode);
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, selection_mode: bool) {
     let footer = Rect {
         x: area.x,
-        y: area.height.saturating_sub(1),
+        y: area.y + area.height.saturating_sub(1),
         width: area.width,
         height: 1,
     };
