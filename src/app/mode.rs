@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 #[derive(Clone, Debug)]
 pub enum Mode {
     Containers,
@@ -40,32 +42,32 @@ impl PartialEq for Mode {
 
 #[derive(Clone, Debug)]
 pub struct ModeStack {
-    stack: Vec<Mode>,
+    stack: VecDeque<Mode>,
     max_depth: usize,
 }
 
 impl ModeStack {
     pub fn new() -> Self {
         Self {
-            stack: vec![Mode::Containers],
+            stack: VecDeque::from([Mode::Containers]),
             max_depth: 10,
         }
     }
 
     pub fn current(&self) -> &Mode {
-        self.stack.last().unwrap_or(&Mode::Containers)
+        self.stack.back().unwrap_or(&Mode::Containers)
     }
 
     pub fn push(&mut self, mode: Mode) {
         if self.stack.len() >= self.max_depth {
-            self.stack.remove(0);
+            self.stack.pop_front();
         }
-        self.stack.push(mode);
+        self.stack.push_back(mode);
     }
 
     pub fn back(&mut self) -> Option<Mode> {
         if self.stack.len() > 1 {
-            Some(self.stack.pop().unwrap())
+            self.stack.pop_back()
         } else {
             None
         }

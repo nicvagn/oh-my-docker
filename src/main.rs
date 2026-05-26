@@ -21,8 +21,19 @@ mod config;
 mod util;
 mod update;
 
+use app::event::AppEvent;
 use app::event::Command;
 use runtime::tasks;
+use tokio::sync::mpsc::UnboundedSender;
+
+fn spawn_all_pollers(docker: Docker, tx: UnboundedSender<AppEvent>) {
+    tasks::spawn_container_poller(docker.clone(), tx.clone());
+    tasks::spawn_image_poller(docker.clone(), tx.clone());
+    tasks::spawn_event_streamer(docker.clone(), tx.clone());
+    tasks::spawn_statistics_poller(docker.clone(), tx.clone());
+    tasks::spawn_network_poller(docker.clone(), tx.clone());
+    tasks::spawn_volume_poller(docker.clone(), tx.clone());
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -74,12 +85,7 @@ async fn main() -> Result<()> {
     let docker: Option<Docker> = match docker::client::connect() {
         Ok(d) => {
             state.containers.docker_connected = true;
-            tasks::spawn_container_poller(d.clone(), event_tx.clone());
-            tasks::spawn_image_poller(d.clone(), event_tx.clone());
-            tasks::spawn_event_streamer(d.clone(), event_tx.clone());
-            tasks::spawn_statistics_poller(d.clone(), event_tx.clone());
-            tasks::spawn_network_poller(d.clone(), event_tx.clone());
-            tasks::spawn_volume_poller(d.clone(), event_tx.clone());
+            spawn_all_pollers(d.clone(), event_tx.clone());
             Some(d)
         }
         Err(e) => {
@@ -96,12 +102,7 @@ async fn main() -> Result<()> {
                     match docker::client::connect() {
                         Ok(d) => {
                             tx.send(app::event::AppEvent::DockerReconnected).ok();
-                            tasks::spawn_container_poller(d.clone(), tx.clone());
-                            tasks::spawn_image_poller(d.clone(), tx.clone());
-                            tasks::spawn_event_streamer(d.clone(), tx.clone());
-                            tasks::spawn_statistics_poller(d.clone(), tx.clone());
-                            tasks::spawn_network_poller(d.clone(), tx.clone());
-                            tasks::spawn_volume_poller(d.clone(), tx.clone());
+                            spawn_all_pollers(d.clone(), tx.clone());
                             break;
                         }
                         Err(e) => {

@@ -132,12 +132,7 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
             }
         }
         AppEvent::ScrollHelp(delta) => {
-            if delta > 0 {
-                new_state.help.scroll_offset = new_state.help.scroll_offset.saturating_add(delta as usize);
-            } else {
-                new_state.help.scroll_offset = new_state.help.scroll_offset.saturating_sub((-delta) as usize);
-            }
-            new_state.help.scroll_offset = new_state.help.scroll_offset.min(10000);
+            new_state.help.scroll_offset = crate::util::scroll_offset(new_state.help.scroll_offset, delta, 10000);
         }
 
         AppEvent::Tick => {
@@ -386,12 +381,7 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
         }
         AppEvent::ScrollDetails(delta) => {
             if let Some(ref mut d) = new_state.details {
-                if delta > 0 {
-                    d.scroll_offset = d.scroll_offset.saturating_add(delta as usize);
-                } else {
-                    d.scroll_offset = d.scroll_offset.saturating_sub((-delta) as usize);
-                }
-                d.scroll_offset = d.scroll_offset.min(10000);
+                d.scroll_offset = crate::util::scroll_offset(d.scroll_offset, delta, 10000);
             }
         }
 
@@ -510,13 +500,8 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
         }
         AppEvent::ScrollLogs(delta) => {
             if let Some(ref mut log) = new_state.logs {
-                if delta > 0 {
-                    log.scroll_offset = log.scroll_offset.saturating_add(delta as usize);
-                } else {
-                    log.scroll_offset = log.scroll_offset.saturating_sub((-delta) as usize);
-                }
                 let max_offset = log.buffer.len().saturating_sub(log.viewport_height);
-                log.scroll_offset = log.scroll_offset.min(max_offset);
+                log.scroll_offset = crate::util::scroll_offset(log.scroll_offset, delta, max_offset);
                 log.tail = log.scroll_offset == 0;
             }
         }
@@ -587,13 +572,8 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
             }
         }
         AppEvent::ScrollEvents(delta) => {
-            if delta > 0 {
-                new_state.events.scroll_offset = new_state.events.scroll_offset.saturating_add(delta as usize);
-            } else {
-                new_state.events.scroll_offset = new_state.events.scroll_offset.saturating_sub((-delta) as usize);
-            }
             let max_offset = new_state.events.buffer.len().saturating_sub(new_state.events.viewport_height);
-            new_state.events.scroll_offset = new_state.events.scroll_offset.min(max_offset);
+            new_state.events.scroll_offset = crate::util::scroll_offset(new_state.events.scroll_offset, delta, max_offset);
         }
         AppEvent::CloseShell => {
             let shell_data = new_state.shell.take();

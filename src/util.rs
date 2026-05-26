@@ -2,6 +2,15 @@ pub fn image_base_name(image: &str) -> &str {
     image.split(':').next().unwrap_or(image)
 }
 
+pub fn scroll_offset(current: usize, delta: i32, max: usize) -> usize {
+    if delta > 0 {
+        current.saturating_add(delta as usize)
+    } else {
+        current.saturating_sub((-delta) as usize)
+    }
+    .min(max)
+}
+
 pub fn resolve_host_user(user: &str) -> String {
     if user == "host" {
         let uid = std::process::Command::new("id")
