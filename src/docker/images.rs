@@ -6,6 +6,20 @@ use anyhow::Result;
 use crate::app::event::{ContainerOpts, ImageEntry};
 use std::collections::HashMap;
 
+fn parse_memory(s: &str) -> Result<u64> {
+    let s = s.trim();
+    let lower = s.to_lowercase();
+    if let Some(num) = lower.strip_suffix("g") {
+        num.parse::<f64>().map(|v| (v * 1_000_000_000.0) as u64).map_err(|e| anyhow::anyhow!("{}", e))
+    } else if let Some(num) = lower.strip_suffix("m") {
+        num.parse::<f64>().map(|v| (v * 1_000_000.0) as u64).map_err(|e| anyhow::anyhow!("{}", e))
+    } else if let Some(num) = lower.strip_suffix("k") {
+        num.parse::<f64>().map(|v| (v * 1_000.0) as u64).map_err(|e| anyhow::anyhow!("{}", e))
+    } else {
+        s.parse::<u64>().map_err(|e| anyhow::anyhow!("{}", e))
+    }
+}
+
 pub async fn list_images(docker: &Docker) -> Result<Vec<ImageEntry>> {
     let options = ListImagesOptions::<String> {
         all: false,
@@ -190,6 +204,63 @@ pub async fn create_container(
 
     if opts.autoremove {
         config.host_config.as_mut().unwrap().auto_remove = Some(true);
+    }
+
+    // Restart policy
+    if !opts.restart_policy.is_empty() {
+        use bollard::models::RestartPolicyNameEnum;
+        let policy_name = match opts.restart_policy.as_str() {
+            "always" => RestartPolicyNameEnum::ALWAYS,
+            "on-failure" => RestartPolicyNameEnum::ON_FAILURE,
+            "unless-stopped" => RestartPolicyNameEnum::UNLESS_STOPPED,
+            _ => RestartPolicyNameEnum::NO,
+        };
+        config.host_config.as_mut().unwrap().restart_policy = Some(bollard::models::RestartPolicy {
+            name: Some(policy_name),
+            ..Default::default()
+        });
+    }
+
+    // Memory limit
+    if !opts.memory_limit.is_empty() {
+        if let Ok(bytes) = parse_memory(&opts.memory_limit) {
+            config.host_config.as_mut().unwrap().memory = Some(bytes as i64);
+        }
+    }
+
+    // CPU limit
+    if !opts.cpu_limit.is_empty() {
+        if let Ok(cpu) = opts.cpu_limit.parse::<f64>() {
+            config.host_config.as_mut().unwrap().nano_cpus = Some((cpu * 1_000_000_000.0) as i64);
+        }
+    }
+
+    // Network
+    if !opts.network.is_empty() {
+        config.host_config.as_mut().unwrap().network_mode = Some(opts.network.clone());
+    }
+
+    // Privileged
+    if opts.privileged {
+        config.host_config.as_mut().unwrap().privileged = Some(true);
+    }
+
+    // Labels
+    if !opts.labels.is_empty() {
+        let labels: HashMap<String, String> = opts.labels
+            .split('\n')
+            .filter(|s| !s.is_empty())
+            .filter_map(|line| {
+                let mut parts = line.splitn(2, '=');
+                match (parts.next(), parts.next()) {
+                    (Some(k), Some(v)) => Some((k.to_string(), v.to_string())),
+                    _ => None,
+                }
+            })
+            .collect();
+        if !labels.is_empty() {
+            config.labels = Some(labels);
+        }
     }
 
     let result = if opts.name.is_empty() {

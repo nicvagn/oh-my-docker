@@ -82,6 +82,12 @@ pub enum ImageRunField {
     PortMapping,
     Volumes,
     ContainerName,
+    RestartPolicy,
+    MemoryLimit,
+    CpuLimit,
+    Network,
+    Labels,
+    Privileged,
 }
 
 #[derive(Clone, Debug)]
@@ -161,6 +167,7 @@ pub enum AppEvent {
     RunImage(String, String),
     ImageRunFieldUpdate(ImageRunField, String),
     ImageRunToggleAutoremove,
+    ImageRunToggleAdvanced,
     ImageRunFocusNext,
     ImageRunFocusPrev,
     ImageRunSubmit,
@@ -198,6 +205,12 @@ pub struct ContainerOpts {
     pub volumes: String,
     pub name: String,
     pub autoremove: bool,
+    pub restart_policy: String,
+    pub memory_limit: String,
+    pub cpu_limit: String,
+    pub network: String,
+    pub labels: String,
+    pub privileged: bool,
 }
 
 #[derive(Clone, Debug)]

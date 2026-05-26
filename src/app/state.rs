@@ -96,8 +96,15 @@ pub struct ImageRunState {
     pub volumes: String,
     pub container_name: String,
     pub autoremove: bool,
+    pub restart_policy: String,
+    pub memory_limit: String,
+    pub cpu_limit: String,
+    pub network: String,
+    pub labels: String,
+    pub privileged: bool,
     pub field_focus: usize,
     pub validation_errors: Vec<(usize, String)>,
+    pub show_advanced: bool,
 }
 
 #[derive(Clone, Debug)]

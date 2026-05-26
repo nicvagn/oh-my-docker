@@ -164,6 +164,75 @@ pub fn render_run(frame: &mut Frame, run: &ImageRunState) {
         Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
     )));
 
+    // Advanced fields
+    if run.show_advanced {
+        // --- Field: Restart Policy ---
+        let restart_display = if run.restart_policy.is_empty() { "(no)" } else { &run.restart_policy };
+        lines.push(Line::from(Span::styled(
+            format!(" {} Restart Policy", if run.field_focus == 9 { "▸" } else { " " }),
+            Style::default().fg(if run.field_focus == 9 { Color::White } else { Color::DarkGray }),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("    {}", restart_display),
+            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        )));
+
+        // --- Field: Memory Limit ---
+        let mem_display = if run.memory_limit.is_empty() { "(none)" } else { &run.memory_limit };
+        lines.push(Line::from(Span::styled(
+            format!(" {} Memory Limit", if run.field_focus == 10 { "▸" } else { " " }),
+            Style::default().fg(if run.field_focus == 10 { Color::White } else { Color::DarkGray }),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("    {}", mem_display),
+            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        )));
+
+        // --- Field: CPU Limit ---
+        let cpu_display = if run.cpu_limit.is_empty() { "(none)" } else { &run.cpu_limit };
+        lines.push(Line::from(Span::styled(
+            format!(" {} CPU Limit", if run.field_focus == 11 { "▸" } else { " " }),
+            Style::default().fg(if run.field_focus == 11 { Color::White } else { Color::DarkGray }),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("    {}", cpu_display),
+            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        )));
+
+        // --- Field: Network ---
+        let net_display = if run.network.is_empty() { "(default)" } else { &run.network };
+        lines.push(Line::from(Span::styled(
+            format!(" {} Network", if run.field_focus == 12 { "▸" } else { " " }),
+            Style::default().fg(if run.field_focus == 12 { Color::White } else { Color::DarkGray }),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("    {}", net_display),
+            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        )));
+
+        // --- Field: Labels ---
+        let label_display = if run.labels.is_empty() { "(none)" } else { &run.labels };
+        lines.push(Line::from(Span::styled(
+            format!(" {} Labels", if run.field_focus == 13 { "▸" } else { " " }),
+            Style::default().fg(if run.field_focus == 13 { Color::White } else { Color::DarkGray }),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("    {}", label_display),
+            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        )));
+
+        // --- Field: Privileged ---
+        let priv_display = if run.privileged { "true" } else { "false" };
+        lines.push(Line::from(Span::styled(
+            format!(" {} Privileged", if run.field_focus == 14 { "▸" } else { " " }),
+            Style::default().fg(if run.field_focus == 14 { Color::White } else { Color::DarkGray }),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("    {}", priv_display),
+            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        )));
+    }
+
     // Help for current field
     lines.push(Line::from(""));
     let help = match run.field_focus {
@@ -176,6 +245,12 @@ pub fn render_run(frame: &mut Frame, run: &ImageRunState) {
         6 => "Host:Container paths, one per line (e.g., '/data:/app/data')",
         7 => "Empty = auto-generated | or a custom name like 'my-container'",
         8 => "Press 'a' to toggle | true = container removed after stop",
+        9 => "Restart policy: no, always, on-failure, unless-stopped",
+        10 => "Memory limit: 512m, 1g, 256m (empty = no limit)",
+        11 => "CPU limit: 0.5, 1, 2 (empty = no limit)",
+        12 => "Network name: host, bridge, or custom network (empty = default)",
+        13 => "Labels: one per line KEY=value (e.g., 'app=myapp')",
+        14 => "Press 'a' to toggle | true = container runs in privileged mode",
         _ => "",
     };
     let val_style = if run.field_focus == 0 && run.command.is_empty() {
@@ -190,6 +265,18 @@ pub fn render_run(frame: &mut Frame, run: &ImageRunState) {
         Some("(auto)")
     } else if run.field_focus == 8 {
         Some(if run.autoremove { "true" } else { "false" })
+    } else if run.field_focus == 9 && run.restart_policy.is_empty() {
+        Some("no")
+    } else if run.field_focus == 10 && run.memory_limit.is_empty() {
+        Some("(none)")
+    } else if run.field_focus == 11 && run.cpu_limit.is_empty() {
+        Some("(none)")
+    } else if run.field_focus == 12 && run.network.is_empty() {
+        Some("(default)")
+    } else if run.field_focus == 13 && run.labels.is_empty() {
+        Some("(none)")
+    } else if run.field_focus == 14 {
+        Some(if run.privileged { "true" } else { "false" })
     } else {
         None
     };
@@ -218,7 +305,7 @@ pub fn render_run(frame: &mut Frame, run: &ImageRunState) {
     // Footer
     lines.push(Line::from(""));
     lines.push(Line::from(Span::styled(
-        " ↑↓/Tab:next field  Enter:run  Esc:cancel  Type:edit  Bksp:delete  a:auto-remove",
+        " ↑↓/Tab:next field  Enter:run  Esc:cancel  Type:edit  Bksp:delete  a:toggle advanced/auto-remove",
         Style::default().fg(Color::DarkGray),
     )));
 

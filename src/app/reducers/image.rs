@@ -63,8 +63,15 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
                 volumes: String::new(),
                 container_name: String::new(),
                 autoremove: true,
+                restart_policy: String::new(),
+                memory_limit: String::new(),
+                cpu_limit: String::new(),
+                network: String::new(),
+                labels: String::new(),
+                privileged: false,
                 field_focus: 0,
                 validation_errors: Vec::new(),
+                show_advanced: false,
             });
             state.navigation.mode_stack.push(crate::app::mode::Mode::ImageRun(image_id));
         }
@@ -79,6 +86,12 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
                     crate::app::event::ImageRunField::PortMapping => run.port_mapping = value.clone(),
                     crate::app::event::ImageRunField::Volumes => run.volumes = value.clone(),
                     crate::app::event::ImageRunField::ContainerName => run.container_name = value.clone(),
+                    crate::app::event::ImageRunField::RestartPolicy => run.restart_policy = value.clone(),
+                    crate::app::event::ImageRunField::MemoryLimit => run.memory_limit = value.clone(),
+                    crate::app::event::ImageRunField::CpuLimit => run.cpu_limit = value.clone(),
+                    crate::app::event::ImageRunField::Network => run.network = value.clone(),
+                    crate::app::event::ImageRunField::Labels => run.labels = value.clone(),
+                    crate::app::event::ImageRunField::Privileged => run.privileged = !run.privileged,
                 }
             }
         }
@@ -87,15 +100,23 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
                 run.autoremove = !run.autoremove;
             }
         }
+        AppEvent::ImageRunToggleAdvanced => {
+            if let Some(ref mut run) = state.navigation.image_run {
+                run.show_advanced = !run.show_advanced;
+                run.field_focus = if run.show_advanced { 8 } else { 0 };
+            }
+        }
         AppEvent::ImageRunFocusNext => {
             if let Some(ref mut run) = state.navigation.image_run {
-                run.field_focus = (run.field_focus + 1) % 9;
+                let max_fields = if run.show_advanced { 14 } else { 8 };
+                run.field_focus = (run.field_focus + 1) % max_fields;
             }
         }
         AppEvent::ImageRunFocusPrev => {
             if let Some(ref mut run) = state.navigation.image_run {
+                let max_fields = if run.show_advanced { 14 } else { 8 };
                 run.field_focus = if run.field_focus == 0 {
-                    8
+                    max_fields - 1
                 } else {
                     run.field_focus.saturating_sub(1)
                 };
@@ -146,6 +167,12 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
                     volumes: run.volumes.clone(),
                     name: run.container_name.clone(),
                     autoremove: run.autoremove,
+                    restart_policy: run.restart_policy.clone(),
+                    memory_limit: run.memory_limit.clone(),
+                    cpu_limit: run.cpu_limit.clone(),
+                    network: run.network.clone(),
+                    labels: run.labels.clone(),
+                    privileged: run.privileged,
                 }));
                 commands.push(Command::SaveConfig);
                 state.navigation.image_run = None;

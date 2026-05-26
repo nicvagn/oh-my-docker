@@ -96,8 +96,16 @@ pub fn handle_image_run_key(key: KeyEvent, state: &AppState) -> Option<AppEvent>
         (KeyCode::Tab, _) | (KeyCode::Down, _) => Some(AppEvent::ImageRunFocusNext),
         (KeyCode::Up, _) => Some(AppEvent::ImageRunFocusPrev),
         (KeyCode::Char(c), KeyModifiers::NONE) | (KeyCode::Char(c), KeyModifiers::SHIFT) => state.navigation.image_run.as_ref().map(|run| {
-            if c == 'a' && run.field_focus == 8 {
-                return AppEvent::ImageRunToggleAutoremove;
+            if c == 'a' {
+                if run.field_focus == 8 {
+                    return AppEvent::ImageRunToggleAutoremove;
+                }
+                if run.field_focus == 14 {
+                    return AppEvent::ImageRunFieldUpdate(ImageRunField::Privileged, String::new());
+                }
+            }
+            if c == 'a' && run.field_focus == 8 && !run.show_advanced {
+                return AppEvent::ImageRunToggleAdvanced;
             }
             let (val, field) = match run.field_focus {
                 0 => (run.command.as_str(), ImageRunField::Command),
@@ -107,6 +115,12 @@ pub fn handle_image_run_key(key: KeyEvent, state: &AppState) -> Option<AppEvent>
                 4 => (run.env_vars.as_str(), ImageRunField::EnvVars),
                 5 => (run.port_mapping.as_str(), ImageRunField::PortMapping),
                 6 => (run.volumes.as_str(), ImageRunField::Volumes),
+                7 => (run.container_name.as_str(), ImageRunField::ContainerName),
+                8 => (run.restart_policy.as_str(), ImageRunField::RestartPolicy),
+                9 => (run.memory_limit.as_str(), ImageRunField::MemoryLimit),
+                10 => (run.cpu_limit.as_str(), ImageRunField::CpuLimit),
+                11 => (run.network.as_str(), ImageRunField::Network),
+                12 => (run.labels.as_str(), ImageRunField::Labels),
                 _ => (run.container_name.as_str(), ImageRunField::ContainerName),
             };
             AppEvent::ImageRunFieldUpdate(field, format!("{}{}", val, c))
