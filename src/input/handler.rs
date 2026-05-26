@@ -66,7 +66,7 @@ fn handle_containers_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
                                 AppEvent::StartContainer(c.id.clone())
                             })
                     } else {
-                        Some(AppEvent::BatchStopContainers(ids))
+                        Some(AppEvent::BatchToggleContainers(ids))
                     }
                 } else {
                     state.containers.filtered.get(state.containers.selected)

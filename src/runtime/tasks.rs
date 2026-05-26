@@ -292,22 +292,46 @@ pub fn spawn_prune_unused_images(docker: Docker, tx: UnboundedSender<AppEvent>) 
     });
 }
 
-pub fn spawn_batch_stop_containers(docker: Docker, tx: UnboundedSender<AppEvent>, ids: Vec<String>) {
+pub fn spawn_batch_toggle_containers(docker: Docker, tx: UnboundedSender<AppEvent>, ids: Vec<String>) {
     tokio::spawn(async move {
         let mut stopped = 0u32;
+        let mut started = 0u32;
         let total = ids.len();
         for id in &ids {
-            match docker::containers::stop_container(&docker, id).await {
-                Ok(()) => {
-                    stopped += 1;
-                    let _ = tx.send(AppEvent::ContainerStopped(id.clone()));
+            let id_str = id.clone();
+            match docker::containers::inspect_container(&docker, &id_str).await {
+                Ok((json, _)) => {
+                    let state = json.get("State").and_then(|s| s.get("Status")).and_then(|s| s.as_str()).unwrap_or("");
+                    if state == "running" {
+                        match docker::containers::stop_container(&docker, &id_str).await {
+                            Ok(()) => {
+                                stopped += 1;
+                                let _ = tx.send(AppEvent::ContainerStopped(id_str));
+                            }
+                            Err(e) => {
+                                let _ = tx.send(AppEvent::Error(format!("Stop {} failed: {}", &id_str[..12.min(id_str.len())], e)));
+                                let _ = tx.send(AppEvent::ContainerStopped(id_str));
+                            }
+                        }
+                    } else if state == "exited" || state == "dead" {
+                        match docker::containers::start_container(&docker, &id_str).await {
+                            Ok(()) => {
+                                started += 1;
+                                let _ = tx.send(AppEvent::Info(format!("Container {} started", &id_str[..12.min(id_str.len())])));
+                                let _ = tx.send(AppEvent::ContainerStarted(id_str));
+                            }
+                            Err(e) => {
+                                let _ = tx.send(AppEvent::Error(format!("Start {} failed: {}", &id_str[..12.min(id_str.len())], e)));
+                            }
+                        }
+                    }
                 }
                 Err(e) => {
-                    let _ = tx.send(AppEvent::Error(format!("Stop {} failed: {}", &id[..12.min(id.len())], e)));
+                    let _ = tx.send(AppEvent::Error(format!("Inspect {} failed: {}", &id_str[..12.min(id_str.len())], e)));
                 }
             }
         }
-        let _ = tx.send(AppEvent::Info(format!("Stopped {}/{} containers", stopped, total)));
+        let _ = tx.send(AppEvent::Info(format!("Toggled {}/{} containers ({} stopped, {} started)", total, total, stopped, started)));
     });
 }
 

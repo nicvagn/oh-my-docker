@@ -124,6 +124,7 @@ pub enum AppEvent {
     RestartContainer(String),
     StopContainer(String),
     ContainerStopped(String),
+    ContainerStarted(String),
     StartContainer(String),
     #[allow(dead_code)]
     DeleteContainer(String),
@@ -135,7 +136,7 @@ pub enum AppEvent {
     ToggleSelectContainer(String),
     SelectAllContainers,
     DeselectAllContainers,
-    BatchStopContainers(Vec<String>),
+    BatchToggleContainers(Vec<String>),
     BatchDeleteContainers(Vec<String>),
 
     LogLines(String, Vec<LogEntry>),
@@ -226,7 +227,7 @@ pub enum Command {
     CreateContainer(ContainerOpts),
     RemoveNetwork(String),
     RemoveVolume(String),
-    BatchStopContainers(Vec<String>),
+    BatchToggleContainers(Vec<String>),
     BatchDeleteContainers(Vec<String>),
     SaveConfig,
     CheckUpdate,

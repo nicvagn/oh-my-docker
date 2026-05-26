@@ -336,6 +336,10 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
         }
         AppEvent::ContainerStopped(id) => {
             new_state.containers.stopping_containers.remove(&id);
+            new_state.containers.starting_containers.remove(&id);
+        }
+        AppEvent::ContainerStarted(id) => {
+            new_state.containers.starting_containers.remove(&id);
         }
         AppEvent::StartContainer(id) => commands.push(Command::StartContainer(id)),
         AppEvent::DeleteContainer(id) => {
@@ -372,11 +376,19 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
         AppEvent::DeselectAllContainers => {
             new_state.containers.selected_ids.clear();
         }
-        AppEvent::BatchStopContainers(ids) => {
+        AppEvent::BatchToggleContainers(ids) => {
             for id in &ids {
-                new_state.containers.stopping_containers.insert(id.clone());
+                let is_running = new_state.containers.items.iter()
+                    .find(|c| c.id == *id)
+                    .map(|c| c.state == "running")
+                    .unwrap_or(false);
+                if is_running {
+                    new_state.containers.stopping_containers.insert(id.clone());
+                } else {
+                    new_state.containers.starting_containers.insert(id.clone());
+                }
             }
-            commands.push(Command::BatchStopContainers(ids));
+            commands.push(Command::BatchToggleContainers(ids));
         }
         AppEvent::BatchDeleteContainers(ids) => {
             for id in &ids {

@@ -108,10 +108,11 @@ pub fn render(frame: &mut Frame, state: &ContainersState, tick_count: u64) {
             let c = &state.items[idx];
             let is_selected = state.filtered.get(state.selected) == Some(&idx);
             let is_stopping = state.stopping_containers.contains(&c.id);
+            let is_starting = state.starting_containers.contains(&c.id);
             let is_deleting = state.deleting_containers.contains(&c.id);
             let is_id_selected = state.selected_ids.contains(&c.id);
 
-            let state_color = if is_stopping || is_deleting {
+            let state_color = if is_stopping || is_starting || is_deleting {
                 Color::Yellow
             } else {
                 match c.state.as_str() {
@@ -123,6 +124,8 @@ pub fn render(frame: &mut Frame, state: &ContainersState, tick_count: u64) {
 
             let state_text = if is_stopping {
                 "stopping...".to_string()
+            } else if is_starting {
+                "starting...".to_string()
             } else if is_deleting {
                 "deleting...".to_string()
             } else {
