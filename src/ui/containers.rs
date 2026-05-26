@@ -87,6 +87,14 @@ pub fn render(frame: &mut Frame, state: &ContainersState) {
             } else if is_deleting {
                 "deleting...".to_string()
             } else {
+                c.state.clone()
+            };
+
+            let uptime_text = if is_deleting {
+                "deleting...".to_string()
+            } else if is_stopping {
+                "stopping...".to_string()
+            } else {
                 c.status.clone()
             };
 
@@ -96,11 +104,11 @@ pub fn render(frame: &mut Frame, state: &ContainersState) {
             let image_cell = Cell::from(c.image.clone());
             let state_cell = Cell::from(status_text).style(Style::default().fg(status_color));
             let ports_cell = Cell::from(c.ports.clone());
-            let status_cell = Cell::from(c.status.clone());
+            let uptime_cell = Cell::from(uptime_text);
 
             let row_style = if is_selected { selected_bg } else { Style::default() };
 
-            Row::new(vec![name_cell, image_cell, state_cell, ports_cell, status_cell])
+            Row::new(vec![name_cell, image_cell, state_cell, ports_cell, uptime_cell])
                 .style(row_style)
                 .height(1)
         })

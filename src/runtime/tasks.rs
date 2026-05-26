@@ -69,6 +69,7 @@ pub fn spawn_stop(docker: Docker, tx: UnboundedSender<AppEvent>, id: String) {
             }
             Err(e) => {
                 let _ = tx.send(AppEvent::Error(format!("Stop failed: {}", e)));
+                let _ = tx.send(AppEvent::ContainerStopped(id));
             }
         }
     });
@@ -95,6 +96,7 @@ pub fn spawn_delete(docker: Docker, tx: UnboundedSender<AppEvent>, id: String) {
             }
             Err(e) => {
                 let _ = tx.send(AppEvent::Error(format!("Delete failed: {}", e)));
+                let _ = tx.send(AppEvent::ContainerDeleted(id));
             }
         }
     });
