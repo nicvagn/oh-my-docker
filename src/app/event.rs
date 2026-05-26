@@ -87,7 +87,6 @@ pub enum ImageRunField {
 #[derive(Clone, Debug)]
 pub enum ConfirmAction {
     DeleteContainer(String),
-    BatchStopContainers,
     BatchDeleteContainers,
     RemoveImage(String),
     RemoveDanglingImages,

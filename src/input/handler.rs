@@ -66,10 +66,7 @@ fn handle_containers_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
                                 AppEvent::StartContainer(c.id.clone())
                             })
                     } else {
-                        Some(AppEvent::ShowConfirmDialog(
-                            format!("Stop {} selected container(s)?", ids.len()),
-                            ConfirmAction::BatchStopContainers,
-                        ))
+                        Some(AppEvent::BatchStopContainers(ids))
                     }
                 } else {
                     state.containers.filtered.get(state.containers.selected)

@@ -218,14 +218,6 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
                             commands.push(Command::DeleteContainer(id));
                         }
                     }
-                    ConfirmAction::BatchStopContainers => {
-                        if !new_state.containers.selected_ids.is_empty() {
-                            let ids: Vec<String> = new_state.containers.selected_ids.iter().cloned().collect();
-                            new_state.containers.selected_ids.clear();
-                            new_state.containers.selection_mode = false;
-                            commands.push(Command::BatchStopContainers(ids));
-                        }
-                    }
                     ConfirmAction::BatchDeleteContainers => {
                         if !new_state.containers.selected_ids.is_empty() {
                             let ids: Vec<String> = new_state.containers.selected_ids.iter().cloned().collect();
@@ -383,8 +375,8 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
         AppEvent::BatchStopContainers(ids) => {
             for id in &ids {
                 new_state.containers.stopping_containers.insert(id.clone());
-                commands.push(Command::StopContainer(id.clone()));
             }
+            commands.push(Command::BatchStopContainers(ids));
         }
         AppEvent::BatchDeleteContainers(ids) => {
             for id in &ids {
