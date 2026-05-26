@@ -77,6 +77,7 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
                     scroll_offset: 0,
                     tail: true,
                     show_timestamps: false,
+                    viewport_height: 0,
                 });
                 commands.push(Command::FetchLogs(id.clone()));
             }
@@ -424,6 +425,7 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
                     scroll_offset: 0,
                     tail: true,
                     show_timestamps: false,
+                    viewport_height: 0,
                 });
             }
             if let Some(ref mut log_state) = new_state.logs {
@@ -529,9 +531,8 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
                 } else {
                     log.scroll_offset = log.scroll_offset.saturating_sub((-delta) as usize);
                 }
-                if log.scroll_offset > log.buffer.len() {
-                    log.scroll_offset = log.buffer.len();
-                }
+                let max_offset = log.buffer.len().saturating_sub(log.viewport_height);
+                log.scroll_offset = log.scroll_offset.min(max_offset);
                 log.tail = log.scroll_offset == 0;
             }
         }
@@ -607,9 +608,8 @@ pub fn reduce(state: AppState, event: AppEvent) -> (AppState, Vec<Command>) {
             } else {
                 new_state.events.scroll_offset = new_state.events.scroll_offset.saturating_sub((-delta) as usize);
             }
-            if new_state.events.scroll_offset > new_state.events.buffer.len() {
-                new_state.events.scroll_offset = new_state.events.buffer.len();
-            }
+            let max_offset = new_state.events.buffer.len().saturating_sub(new_state.events.viewport_height);
+            new_state.events.scroll_offset = new_state.events.scroll_offset.min(max_offset);
         }
         AppEvent::CloseShell => {
             let shell_data = new_state.shell.take();

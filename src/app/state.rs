@@ -62,6 +62,7 @@ pub struct LogState {
     pub scroll_offset: usize,
     pub tail: bool,
     pub show_timestamps: bool,
+    pub viewport_height: usize,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -97,6 +98,7 @@ pub struct EventsState {
     pub filter: String,
     pub filter_active: bool,
     pub scroll_offset: usize,
+    pub viewport_height: usize,
 }
 
 impl Default for EventsState {
@@ -107,6 +109,7 @@ impl Default for EventsState {
             filter: String::new(),
             filter_active: false,
             scroll_offset: 0,
+            viewport_height: 0,
         }
     }
 }

@@ -6,7 +6,7 @@ use ratatui::widgets::{Block, Borders, Paragraph, BorderType, Wrap};
 
 use crate::app::state::EventsState;
 
-pub fn render(frame: &mut Frame, state: &EventsState) {
+pub fn render(frame: &mut Frame, state: &mut EventsState) {
     let search_label = if !state.filter.is_empty() {
         format!(" FILTER '{}'", state.filter)
     } else {
@@ -35,6 +35,9 @@ pub fn render(frame: &mut Frame, state: &EventsState) {
 
     let height = inner.height as usize;
 
+    state.viewport_height = height;
+    let max_offset = state.buffer.len().saturating_sub(height);
+    state.scroll_offset = state.scroll_offset.min(max_offset);
     let start = state.buffer.len().saturating_sub(height + state.scroll_offset);
 
     let lines: Vec<Line> = state

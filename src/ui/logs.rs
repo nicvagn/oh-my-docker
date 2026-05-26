@@ -50,7 +50,7 @@ fn highlight_text(text: &str, search: &str) -> Line<'static> {
     Line::from(spans)
 }
 
-pub fn render(frame: &mut Frame, state: &LogState) {
+pub fn render(frame: &mut Frame, state: &mut LogState) {
     let search_label = if !state.search.is_empty() {
         format!(" SEARCH '{}'", state.search)
     } else {
@@ -84,6 +84,9 @@ pub fn render(frame: &mut Frame, state: &LogState) {
     let has_filter = !state.search.is_empty();
     let height = inner.height as usize;
 
+    state.viewport_height = height;
+    let max_offset = state.buffer.len().saturating_sub(height);
+    state.scroll_offset = state.scroll_offset.min(max_offset);
     let start = state.buffer.len().saturating_sub(height + state.scroll_offset);
     let show_ts = state.show_timestamps;
     let lines: Vec<Line> = state

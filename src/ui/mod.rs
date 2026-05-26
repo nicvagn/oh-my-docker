@@ -29,7 +29,7 @@ pub fn render(frame: &mut Frame, state: &mut AppState) {
             }
         }
         Mode::Logs(_) => {
-            if let Some(ref logs) = state.logs {
+            if let Some(ref mut logs) = state.logs {
                 logs::render(frame, logs);
             } else {
                 logs_render_placeholder(frame);
@@ -53,7 +53,7 @@ pub fn render(frame: &mut Frame, state: &mut AppState) {
                 shell_config::render(frame, cfg);
             }
         }
-        Mode::Events => events::render(frame, &state.events),
+        Mode::Events => events::render(frame, &mut state.events),
         Mode::Statistics => statistics::render(frame, &state.statistics),
         Mode::Networks => networks::render(frame, &state.networks),
         Mode::Volumes => volumes::render(frame, &state.volumes),
