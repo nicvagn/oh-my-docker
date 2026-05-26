@@ -127,6 +127,13 @@ fn handle_containers_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             KeyCode::Char('%') => Some(AppEvent::Navigate(Mode::Statistics)),
             KeyCode::Char('n') => Some(AppEvent::Navigate(Mode::Networks)),
             KeyCode::Char('v') => Some(AppEvent::Navigate(Mode::Volumes)),
+            KeyCode::Esc => {
+                if state.containers.selection_mode {
+                    Some(AppEvent::ToggleSelectionMode)
+                } else {
+                    None
+                }
+            }
             _ => None,
         }
     }
@@ -480,13 +487,15 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             match action {
                 keys::Action::Quit => return Some(AppEvent::Quit),
                 keys::Action::Back => {
-                    if *state.mode_stack.current() == Mode::Help {
+                    if state.containers.selection_mode {
+                        // Let ESC pass through to containers handler for selection mode
+                    } else if *state.mode_stack.current() == Mode::Help {
                         return Some(AppEvent::HideHelp);
-                    }
-                    if state.mode_stack.len() > 1 {
+                    } else if state.mode_stack.len() > 1 {
                         return Some(AppEvent::Back);
+                    } else {
+                        return None;
                     }
-                    return None;
                 }
                 keys::Action::ShowHelp => return Some(AppEvent::ShowHelp),
             }
