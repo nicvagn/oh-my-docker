@@ -68,7 +68,6 @@ pub struct ImageColumns {
     pub show_tag: bool,
     pub show_id: bool,
     pub show_size: bool,
-    pub show_ports: bool,
 }
 
 impl Default for ImageColumns {
@@ -78,7 +77,6 @@ impl Default for ImageColumns {
             show_tag: true,
             show_id: true,
             show_size: true,
-            show_ports: false,
         }
     }
 }
