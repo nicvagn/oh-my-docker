@@ -8,11 +8,10 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
     match event {
         AppEvent::EventsUpdated(events) => {
             for e in events {
-                state.events.buffer.push(e.clone());
+                state.events.buffer.push_back(e.clone());
             }
             if state.events.buffer.len() > state.events.max_events {
-                let excess = state.events.buffer.len() - state.events.max_events;
-                state.events.buffer.drain(0..excess);
+                state.events.buffer.truncate(state.events.max_events);
             }
             state.events.last_updated = Some(Instant::now());
         }

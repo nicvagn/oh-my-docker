@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::collections::VecDeque;
 use std::time::Instant;
 use tokio::task::AbortHandle;
 
@@ -63,7 +64,7 @@ pub struct DetailsState {
 #[derive(Clone, Debug)]
 pub struct LogState {
     pub container_id: String,
-    pub buffer: Vec<LogEntry>,
+    pub buffer: VecDeque<LogEntry>,
     pub max_lines: usize,
     pub paused: bool,
     pub search: String,
@@ -112,7 +113,7 @@ pub struct ImageRunState {
 
 #[derive(Clone, Debug)]
 pub struct EventsState {
-    pub buffer: Vec<DockerEvent>,
+    pub buffer: VecDeque<DockerEvent>,
     pub max_events: usize,
     pub filter: String,
     pub filter_active: bool,
@@ -124,7 +125,7 @@ pub struct EventsState {
 impl Default for EventsState {
     fn default() -> Self {
         Self {
-            buffer: Vec::new(),
+            buffer: VecDeque::new(),
             max_events: 10000,
             filter: String::new(),
             filter_active: false,

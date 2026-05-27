@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::app::event::{AppEvent, Command, ConfirmAction};
 use crate::app::mode;
 use crate::app::mode::Mode;
@@ -28,7 +30,7 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
                 }
                 state.navigation.logs = Some(crate::app::state::LogState {
                     container_id: id.clone(),
-                    buffer: Vec::new(),
+                    buffer: VecDeque::new(),
                     max_lines: 10000,
                     paused: false,
                     search: String::new(),

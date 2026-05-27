@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::app::event::{AppEvent, Command};
 use crate::app::state::AppState;
 
@@ -12,7 +14,7 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
             if should_swap {
                 state.navigation.logs = Some(crate::app::state::LogState {
                     container_id: id.clone(),
-                    buffer: Vec::new(),
+                    buffer: VecDeque::new(),
                     max_lines: 10000,
                     paused: false,
                     search: String::new(),
@@ -26,14 +28,13 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
             if let Some(ref mut log_state) = state.navigation.logs {
                 let n = lines.len();
                 for line in lines {
-                    log_state.buffer.push(line.clone());
+                    log_state.buffer.push_back(line.clone());
                 }
                 if log_state.paused {
                     log_state.scroll_offset = log_state.scroll_offset.saturating_add(n);
                 }
                 if log_state.buffer.len() > log_state.max_lines {
-                    let excess = log_state.buffer.len() - log_state.max_lines;
-                    log_state.buffer.drain(0..excess);
+                    log_state.buffer.truncate(log_state.max_lines);
                 }
                 if log_state.tail {
                     log_state.scroll_offset = 0;
