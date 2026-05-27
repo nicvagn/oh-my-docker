@@ -139,7 +139,6 @@ pub fn parse_keybinding(s: &str) -> ParsedKey {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct KeyMap {
     pub quit: Vec<ParsedKey>,
