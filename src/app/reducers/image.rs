@@ -131,9 +131,8 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
         AppEvent::ToggleColumn(name) => {
             if state.images.show_column_picker {
                 let col_count = 4;
+                crate::app::reducers::handle_column_nav(name, col_count, &mut state.images.column_picker_selection);
                 match name.as_str() {
-                    "next" => state.images.column_picker_selection = (state.images.column_picker_selection + 1) % col_count,
-                    "prev" => state.images.column_picker_selection = (state.images.column_picker_selection + col_count - 1) % col_count,
                     "repository" => state.config.image_columns.show_repository = !state.config.image_columns.show_repository,
                     "tag" => state.config.image_columns.show_tag = !state.config.image_columns.show_tag,
                     "id" => state.config.image_columns.show_id = !state.config.image_columns.show_id,

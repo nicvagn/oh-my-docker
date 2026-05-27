@@ -20,9 +20,8 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
         AppEvent::ToggleColumn(name) => {
             if state.volumes.show_column_picker {
                 let col_count = 3;
+                crate::app::reducers::handle_column_nav(name, col_count, &mut state.volumes.column_picker_selection);
                 match name.as_str() {
-                    "next" => state.volumes.column_picker_selection = (state.volumes.column_picker_selection + 1) % col_count,
-                    "prev" => state.volumes.column_picker_selection = (state.volumes.column_picker_selection + col_count - 1) % col_count,
                     "name" => state.config.volume_columns.show_name = !state.config.volume_columns.show_name,
                     "driver" => state.config.volume_columns.show_driver = !state.config.volume_columns.show_driver,
                     "mountpoint" => state.config.volume_columns.show_mountpoint = !state.config.volume_columns.show_mountpoint,
