@@ -78,7 +78,6 @@ pub fn spawn_stop(docker: Docker, tx: UnboundedSender<AppEvent>, id: String) {
             }
             Err(e) => {
                 let _ = tx.send(AppEvent::Error(format!("Stop failed: {}", e)));
-                let _ = tx.send(AppEvent::ContainerStopped(id));
             }
         }
     });
@@ -105,7 +104,6 @@ pub fn spawn_delete(docker: Docker, tx: UnboundedSender<AppEvent>, id: String) {
             }
             Err(e) => {
                 let _ = tx.send(AppEvent::Error(format!("Delete failed: {}", e)));
-                let _ = tx.send(AppEvent::ContainerDeleted(id));
             }
         }
     });
@@ -312,7 +310,6 @@ pub fn spawn_batch_toggle_containers(docker: Docker, tx: UnboundedSender<AppEven
                                 }
                                 Err(e) => {
                                     let _ = tx.send(AppEvent::Error(format!("Stop {} failed: {}", &id[..12.min(id.len())], e)));
-                                    let _ = tx.send(AppEvent::ContainerStopped(id));
                                     ("stopped", false)
                                 }
                             }
