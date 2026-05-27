@@ -20,25 +20,11 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             _ => None,
         }
     } else if state.images.filter_active {
-        match (key.code, key.modifiers) {
-            (KeyCode::Backspace, _) | (KeyCode::Char('h'), KeyModifiers::CONTROL) => {
-                let new_q = state.images.filter.chars().take(state.images.filter.chars().count().saturating_sub(1)).collect();
-                Some(AppEvent::FilterImages(new_q))
-            }
-            (KeyCode::Esc, _) => Some(AppEvent::FilterImages(String::new())),
-            (KeyCode::Enter, _) => Some(AppEvent::FilterSubmit(None)),
-            (KeyCode::Down, _) => {
-                let next = (state.images.selected + 1).min(state.images.filtered.len().saturating_sub(1));
-                Some(AppEvent::FilterSubmit(Some(next)))
-            }
-            (KeyCode::Up, _) => {
-                let prev = state.images.selected.saturating_sub(1);
-                Some(AppEvent::FilterSubmit(Some(prev)))
-            }
-            (KeyCode::Char(c), KeyModifiers::NONE) | (KeyCode::Char(c), KeyModifiers::SHIFT) => {
-                let new_q = format!("{}{}", state.images.filter, c);
-                Some(AppEvent::FilterImages(new_q))
-            }
+        use crate::app::handlers::FilterAction;
+        match crate::app::handlers::handle_filter_input(key, &state.images.filter, state.images.selected, state.images.filtered.len()) {
+            Some(FilterAction::Update(q)) => Some(AppEvent::FilterImages(q)),
+            Some(FilterAction::Clear) => Some(AppEvent::FilterImages(String::new())),
+            Some(FilterAction::Submit(idx)) => Some(AppEvent::FilterSubmit(idx)),
             _ => None,
         }
     } else {

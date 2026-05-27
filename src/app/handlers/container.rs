@@ -21,25 +21,11 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             _ => None,
         }
     } else if state.containers.filter_active {
-        match (key.code, key.modifiers) {
-            (KeyCode::Backspace, _) | (KeyCode::Char('h'), KeyModifiers::CONTROL) => {
-                let new_q = state.containers.filter.chars().take(state.containers.filter.chars().count().saturating_sub(1)).collect();
-                Some(AppEvent::FilterContainers(new_q))
-            }
-            (KeyCode::Esc, _) => Some(AppEvent::FilterContainers(String::new())),
-            (KeyCode::Enter, _) => Some(AppEvent::FilterSubmit(None)),
-            (KeyCode::Down, _) => {
-                let next = (state.containers.selected + 1).min(state.containers.filtered.len().saturating_sub(1));
-                Some(AppEvent::FilterSubmit(Some(next)))
-            }
-            (KeyCode::Up, _) => {
-                let prev = state.containers.selected.saturating_sub(1);
-                Some(AppEvent::FilterSubmit(Some(prev)))
-            }
-            (KeyCode::Char(c), KeyModifiers::NONE) | (KeyCode::Char(c), KeyModifiers::SHIFT) => {
-                let new_q = format!("{}{}", state.containers.filter, c);
-                Some(AppEvent::FilterContainers(new_q))
-            }
+        use crate::app::handlers::FilterAction;
+        match crate::app::handlers::handle_filter_input(key, &state.containers.filter, state.containers.selected, state.containers.filtered.len()) {
+            Some(FilterAction::Update(q)) => Some(AppEvent::FilterContainers(q)),
+            Some(FilterAction::Clear) => Some(AppEvent::FilterContainers(String::new())),
+            Some(FilterAction::Submit(idx)) => Some(AppEvent::FilterSubmit(idx)),
             _ => None,
         }
     } else {
