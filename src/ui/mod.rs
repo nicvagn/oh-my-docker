@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Style};
@@ -5,6 +7,18 @@ use ratatui::widgets::Paragraph;
 use crate::app::mode;
 use crate::app::mode::Mode;
 use crate::app::state::AppState;
+
+pub fn staleness_indicator(last_updated: Option<std::time::Instant>, fresh: Duration, stale: Duration) -> (char, Color) {
+    match last_updated {
+        Some(instant) => {
+            let elapsed = instant.elapsed();
+            if elapsed < fresh { ('●', Color::Green) }
+            else if elapsed < stale { ('○', Color::Yellow) }
+            else { ('◌', Color::Red) }
+        }
+        None => ('?', Color::DarkGray),
+    }
+}
 
 pub mod column_picker;
 pub mod containers;

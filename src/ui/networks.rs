@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Rect};
 use ratatui::style::{Color, Modifier, Style};
@@ -16,15 +18,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &NetworksState, columns: &cr
     let (indicator_char, indicator_color) = if state.loading {
         ('⠋', Color::Yellow)
     } else {
-        let (ch, color) = if let Some(instant) = state.last_updated {
-            let elapsed = instant.elapsed();
-            let fresh = std::time::Duration::from_secs(20);
-            let stale = std::time::Duration::from_secs(50);
-            if elapsed < fresh { ('●', Color::Green) }
-            else if elapsed < stale { ('○', Color::Yellow) }
-            else { ('◌', Color::Red) }
-        } else { ('?', Color::DarkGray) };
-        (ch, color)
+        crate::ui::staleness_indicator(state.last_updated, Duration::from_secs(20), Duration::from_secs(50))
     };
 
     let title = if state.loading {

@@ -11,25 +11,6 @@ use crate::app::state::ContainersState;
 use crate::config::ContainerColumns;
 
 
-fn staleness_indicator(last_updated: Option<std::time::Instant>, interval_ms: u64) -> (char, Color) {
-    let threshold_fresh = Duration::from_millis(interval_ms * 2);
-    let threshold_stale = Duration::from_millis(interval_ms * 5);
-
-    match last_updated {
-        Some(instant) => {
-            let elapsed = instant.elapsed();
-            if elapsed < threshold_fresh {
-                ('●', Color::Green)
-            } else if elapsed < threshold_stale {
-                ('○', Color::Yellow)
-            } else {
-                ('◌', Color::Red)
-            }
-        }
-        None => ('?', Color::DarkGray),
-    }
-}
-
 fn project_group_header(group_name: &str, count: usize) -> Row<'static> {
     let header = format!(" {} ({}) ", group_name, count);
     Row::new(vec![Cell::from(header).style(Style::default().fg(Color::Yellow))])
@@ -42,7 +23,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &ContainersState, tick_count
     } else if !state.docker_connected {
         ('?', Color::Red)
     } else {
-        staleness_indicator(state.last_updated, 2000)
+        crate::ui::staleness_indicator(state.last_updated, Duration::from_millis(4000), Duration::from_millis(10000))
     };
 
     let title = if state.loading {
