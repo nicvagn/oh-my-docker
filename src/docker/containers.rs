@@ -25,10 +25,6 @@ fn extract_config_file(labels: &Option<std::collections::HashMap<String, String>
     extract_label(labels, "com.docker.compose.config-files")
 }
 
-fn extract_health(_c: &impl std::any::Any) -> String {
-    String::new()
-}
-
 pub async fn list_containers(docker: &Docker) -> Result<Vec<ContainerSummary>> {
     let options = ListContainersOptions::<String> {
         all: true,
@@ -64,6 +60,15 @@ pub async fn list_containers(docker: &Docker) -> Result<Vec<ContainerSummary>> {
                 .collect::<Vec<_>>()
                 .join(", ");
 
+            let health = c.status.as_ref()
+                .and_then(|s| {
+                    if s.contains("(healthy)") { Some("healthy".into()) }
+                    else if s.contains("(unhealthy)") { Some("unhealthy".into()) }
+                    else if s.contains("(health:") { Some("starting".into()) }
+                    else { None }
+                })
+                .unwrap_or_default();
+
             ContainerSummary {
                 id: c.id.as_ref().map(|s| s.clone()).unwrap_or_default(),
                 name,
@@ -74,7 +79,7 @@ pub async fn list_containers(docker: &Docker) -> Result<Vec<ContainerSummary>> {
                 project: extract_project(&c.labels),
                 service: extract_service(&c.labels),
                 compose_file: extract_config_file(&c.labels),
-                health: extract_health(&c),
+                health,
             }
         })
         .collect();
