@@ -1,6 +1,16 @@
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::app::event::{AppEvent, ConfirmAction};
 use crate::app::state::AppState;
+
+pub fn handle_key_with_clipboard(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
+    if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('y') {
+        if let Some(n) = state.networks.items.get(state.networks.selected) {
+            let _ = crate::util::copy_to_clipboard(&n.id);
+            return Some(AppEvent::Info(format!("Network ID copied to clipboard")));
+        }
+    }
+    handle_key(key, state)
+}
 
 pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
     let km = &state.keymap;

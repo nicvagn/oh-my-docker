@@ -57,18 +57,18 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         return Some(AppEvent::ShowHelp);
     }
 
-    match state.navigation.mode_stack.current() {
-        Mode::Containers => crate::app::handlers::container::handle_key(key, state),
+   match state.navigation.mode_stack.current() {
+        Mode::Containers => crate::app::handlers::container::handle_key_with_clipboard(key, state),
         Mode::ContainerDetails(_) => crate::app::handlers::navigation::handle_details_key(key, state),
         Mode::Logs(_) => crate::app::handlers::log::handle_key(key, state),
-        Mode::Images => crate::app::handlers::image::handle_key(key, state),
+        Mode::Images => crate::app::handlers::image::handle_key_with_clipboard(key, state),
         Mode::ImageRun(_) => crate::app::handlers::image::handle_image_run_key(key, state),
         Mode::ShellConfig(_) => crate::app::handlers::shell::handle_shell_config_key(key, state),
         Mode::Shell(_) => crate::app::handlers::shell::handle_shell_key(key),
         Mode::Events => crate::app::handlers::event::handle_key(key, state),
         Mode::Statistics => crate::app::handlers::statistics::handle_key(key, state),
-        Mode::Networks => crate::app::handlers::network::handle_key(key, state),
-        Mode::Volumes => crate::app::handlers::volume::handle_key(key, state),
+        Mode::Networks => crate::app::handlers::network::handle_key_with_clipboard(key, state),
+        Mode::Volumes => crate::app::handlers::volume::handle_key_with_clipboard(key, state),
         Mode::Help => crate::app::handlers::navigation::handle_help_key(key, state),
         Mode::ConfirmDialog { .. } => crate::app::handlers::navigation::handle_confirm_dialog_key(key),
     }

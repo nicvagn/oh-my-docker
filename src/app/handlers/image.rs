@@ -75,6 +75,22 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
     }
 }
 
+pub fn handle_key_with_clipboard(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
+    use crossterm::event::KeyModifiers;
+    if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('y') {
+        if state.images.filter_active {
+            return handle_key(key, state);
+        }
+        if let Some(&idx) = state.images.filtered.get(state.images.selected) {
+            if let Some(img) = state.images.items.get(idx) {
+                let _ = crate::util::copy_to_clipboard(&img.id);
+                return Some(AppEvent::Info(format!("Image ID copied to clipboard")));
+            }
+        }
+    }
+    handle_key(key, state)
+}
+
 pub fn handle_image_run_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
     match (key.code, key.modifiers) {
         (KeyCode::Backspace, _) | (KeyCode::Char('h'), KeyModifiers::CONTROL) => state.navigation.image_run.as_ref().map(|run| {

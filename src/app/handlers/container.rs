@@ -153,3 +153,15 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         None
     }
 }
+
+pub fn handle_key_with_clipboard(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
+    if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('y') {
+        if let Some(c) = state.containers.filtered.get(state.containers.selected)
+            .and_then(|&idx| state.containers.items.get(idx))
+        {
+            let _ = crate::util::copy_to_clipboard(&c.id);
+            return Some(AppEvent::Info(format!("Container ID copied to clipboard")));
+        }
+    }
+    handle_key(key, state)
+}

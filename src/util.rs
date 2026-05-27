@@ -30,3 +30,40 @@ pub fn resolve_host_user(user: &str) -> String {
         user.to_string()
     }
 }
+
+pub fn copy_to_clipboard(text: &str) -> bool {
+    let mut cmd = std::process::Command::new("xclip");
+    cmd.arg("-selection").arg("clipboard");
+    if let Ok(mut child) = cmd.spawn() {
+        if let Some(mut stdin) = child.stdin.take() {
+            use std::io::Write;
+            let _ = stdin.write_all(text.as_bytes());
+        }
+        let _ = child.wait();
+        return true;
+    }
+
+    let mut cmd = std::process::Command::new("wl-copy");
+    if let Ok(mut child) = cmd.spawn() {
+        if let Some(mut stdin) = child.stdin.take() {
+            use std::io::Write;
+            let _ = stdin.write_all(text.as_bytes());
+        }
+        let _ = child.wait();
+        return true;
+    }
+
+    let mut cmd = std::process::Command::new("pbcopy");
+    if let Ok(mut child) = cmd.spawn() {
+        if let Some(mut stdin) = child.stdin.take() {
+            use std::io::Write;
+            let _ = stdin.write_all(text.as_bytes());
+        }
+        let _ = child.wait();
+        return true;
+    }
+
+    let path = format!("/tmp/omdocker_clipboard_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0));
+    let _ = std::fs::write(&path, text);
+    false
+}
