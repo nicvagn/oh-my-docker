@@ -68,15 +68,97 @@ pub fn reduce(state: &mut AppState, event: AppEvent) -> Vec<Command> {
 
         // Delegate to sub-reducers
         _ => {
-            commands.extend(crate::app::reducers::navigation::reduce(state, &event));
-            commands.extend(crate::app::reducers::container::reduce(state, &event));
-            commands.extend(crate::app::reducers::image::reduce(state, &event));
-            commands.extend(crate::app::reducers::log::reduce(state, &event));
-            commands.extend(crate::app::reducers::event::reduce(state, &event));
-            commands.extend(crate::app::reducers::statistics::reduce(state, &event));
-            commands.extend(crate::app::reducers::network::reduce(state, &event));
-            commands.extend(crate::app::reducers::volume::reduce(state, &event));
-            commands.extend(crate::app::reducers::shell::reduce(state, &event));
+            use crate::app::event::AppEvent;
+            match &event {
+                AppEvent::Navigate(_)
+                | AppEvent::Back
+                | AppEvent::ShowHelp
+                | AppEvent::HideHelp
+                | AppEvent::ScrollHelp(_)
+                | AppEvent::ShowConfirmDialog(_, _)
+                | AppEvent::ConfirmYes
+                | AppEvent::ConfirmNo
+                | AppEvent::ShowDetails
+                | AppEvent::Inspected(_, _)
+                | AppEvent::ScrollDetails(_)
+                | AppEvent::FilterSubmit(_)
+                | AppEvent::JumpTop
+                | AppEvent::JumpBottom => {
+                    commands.extend(crate::app::reducers::navigation::reduce(state, &event));
+                }
+                AppEvent::ContainersUpdated(_)
+                | AppEvent::SelectContainer(_)
+                | AppEvent::FilterContainers(_)
+                | AppEvent::ActivateFilter
+                | AppEvent::RestartContainer(_)
+                | AppEvent::StopContainer(_)
+                | AppEvent::ContainerStopped(_)
+                | AppEvent::ContainerStarted(_)
+                | AppEvent::StartContainer(_)
+                | AppEvent::ContainerDeleted(_)
+                | AppEvent::ToggleSelectionMode
+                | AppEvent::ToggleSelectContainer(_)
+                | AppEvent::SelectAllContainers
+                | AppEvent::ToggleColumnPicker
+                | AppEvent::ToggleColumn(_)
+                | AppEvent::BatchToggleContainers(_) => {
+                    commands.extend(crate::app::reducers::container::reduce(state, &event));
+                }
+                AppEvent::ImagesUpdated(_)
+                | AppEvent::SelectImage(_)
+                | AppEvent::FilterImages(_)
+                | AppEvent::ActivateImageFilter
+                | AppEvent::PrunedImages(_)
+                | AppEvent::RunImage(_, _)
+                | AppEvent::ImageRunFieldUpdate(_, _)
+                | AppEvent::ImageRunToggleAutoremove
+                | AppEvent::ImageRunToggleAdvanced
+                | AppEvent::ImageRunFocusNext
+                | AppEvent::ImageRunFocusPrev
+                | AppEvent::ImageRunSubmit => {
+                    commands.extend(crate::app::reducers::image::reduce(state, &event));
+                }
+                AppEvent::LogLines(_, _)
+                | AppEvent::TogglePause
+                | AppEvent::ActivateLogSearch
+                | AppEvent::SearchLogs(_)
+                | AppEvent::SubmitLogSearch
+                | AppEvent::ScrollLogs(_)
+                | AppEvent::ToggleLogTimestamps
+                | AppEvent::ExportLogs(_) => {
+                    commands.extend(crate::app::reducers::log::reduce(state, &event));
+                }
+                AppEvent::EventsUpdated(_)
+                | AppEvent::ActivateEventsFilter
+                | AppEvent::EventsFilterSubmit
+                | AppEvent::FilterEvents(_)
+                | AppEvent::ExportEvents
+                | AppEvent::ScrollEvents(_) => {
+                    commands.extend(crate::app::reducers::event::reduce(state, &event));
+                }
+                AppEvent::StatisticsUpdated(_)
+                | AppEvent::CycleSortStat(_)
+                | AppEvent::ToggleSortDirection => {
+                    commands.extend(crate::app::reducers::statistics::reduce(state, &event));
+                }
+                AppEvent::NetworksUpdated(_)
+                | AppEvent::SelectNetwork(_) => {
+                    commands.extend(crate::app::reducers::network::reduce(state, &event));
+                }
+                AppEvent::VolumesUpdated(_)
+                | AppEvent::SelectVolume(_) => {
+                    commands.extend(crate::app::reducers::volume::reduce(state, &event));
+                }
+                AppEvent::CloseShell
+                | AppEvent::StartShell(_, _, _, _)
+                | AppEvent::ShellConfigSubmit
+                | AppEvent::ShellConfigFieldUpdate(_, _)
+                | AppEvent::ShellConfigFocusNext
+                | AppEvent::ShellConfigFocusPrev => {
+                    commands.extend(crate::app::reducers::shell::reduce(state, &event));
+                }
+                _ => {}
+            }
         }
     }
 
