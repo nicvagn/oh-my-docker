@@ -34,7 +34,9 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         || state.volumes.show_column_picker
         || state.navigation.logs.as_ref().map(|l| l.search_active).unwrap_or(false)
         || state.navigation.shell_config.is_some()
-        || state.navigation.image_run.is_some();
+        || state.navigation.image_run.is_some()
+        || state.explorer.host.filter_active
+        || state.explorer.container.filter_active;
 
     if state.error_persistent {
         return Some(AppEvent::Info(String::new()));
@@ -121,5 +123,6 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         Mode::Volumes => crate::app::handlers::volume::handle_key_with_clipboard(key, state),
         Mode::Help => crate::app::handlers::navigation::handle_help_key(key, state),
         Mode::ConfirmDialog { .. } => crate::app::handlers::navigation::handle_confirm_dialog_key(key),
+        Mode::Explorer(_) => crate::app::handlers::explorer::handle_key(key, state),
     }
 }

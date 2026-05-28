@@ -69,6 +69,7 @@ pub fn render(frame: &mut Frame, area: Rect, details: &mut DetailsState, contain
         Span::styled(" s:shell ", Style::default().fg(Color::Cyan)),
         Span::styled(" r:restart ", Style::default().fg(Color::Cyan)),
         Span::styled(" t:start/stop ", Style::default().fg(Color::Cyan)),
+        Span::styled(" x:explorer ", Style::default().fg(Color::Cyan)),
         Span::styled(" j/k↓↑/PgUp/PgDn scroll ", Style::default().fg(Color::Cyan)),
         Span::styled(" Esc:back ", Style::default().fg(Color::DarkGray)),
     ];

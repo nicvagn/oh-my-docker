@@ -1,4 +1,5 @@
 use crate::app::mode::Mode;
+use crate::app::state::ExplorerEntry;
 
 #[derive(Clone, Debug)]
 pub struct ContainerSummary {
@@ -100,6 +101,8 @@ pub enum ConfirmAction {
     PruneUnusedImages,
     RemoveNetwork(String),
     RemoveVolume(String),
+    DeleteHostFile(String),
+    DeleteContainerFile(String, String),
 }
 
 #[derive(Clone, Debug)]
@@ -193,6 +196,31 @@ pub enum AppEvent {
 
     ToggleColumnPicker,
     ToggleColumn(String),
+
+    ExplorerSelect,
+    ExplorerCopyToContainer,
+    ExplorerCopyFromContainer,
+    ExplorerTransferComplete(String),
+    ExplorerTransferError(String),
+    ExplorerFilter(String),
+    ExplorerContainerDirUpdated(String, String, Vec<ExplorerEntry>),
+    ExplorerHostGoUp,
+    ExplorerContainerGoUp,
+    ExplorerHostSelect(usize),
+    ExplorerContainerSelect(usize),
+    ExplorerHostEnterDir(String),
+    ExplorerContainerEnterDir(String),
+    ExplorerHostRefresh,
+    ExplorerContainerRefresh,
+    ExplorerHostActivateFilter,
+    ExplorerContainerActivateFilter,
+    ExplorerFilterSubmit,
+    ExplorerHostActivateRename,
+    ExplorerContainerActivateRename,
+    ExplorerRenameUpdate(String),
+    ExplorerRenameCancel,
+    ExplorerRenameSubmit,
+    ExplorerHostDirUpdated(String, Vec<ExplorerEntry>),
 }
 
 #[derive(Clone, Debug)]
@@ -235,4 +263,12 @@ pub enum Command {
     CheckUpdate,
     DownloadUpdate { version: String, download_url: String },
     ExportLogs(String, Vec<String>),
+    ListContainerDir(String, String),
+    ListHostDir(String),
+    CopyToContainer(String, String, String),
+    CopyFromContainer(String, String, String),
+    DeleteHostFile(String),
+    DeleteContainerFile(String, String),
+    RenameHostFile(String, String),
+    RenameContainerFile(String, String, String),
 }

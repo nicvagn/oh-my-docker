@@ -6,6 +6,7 @@ use tokio::task::AbortHandle;
 
 use crate::config::OmdockerConfig;
 use crate::app::event::{ContainerSummary, ImageEntry, LogEntry, DockerEvent, StatEntry, NetworkEntry, VolumeEntry};
+
 use crate::app::mode;
 use crate::app::navigation::NavigationState;
 use crate::input::keymap::KeyMap;
@@ -248,6 +249,81 @@ pub struct HelpState {
     pub scroll_offset: usize,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ExplorerFocus {
+    Left,
+    Right,
+}
+
+#[derive(Clone, Debug)]
+#[allow(dead_code)]
+pub struct ExplorerEntry {
+    pub name: String,
+    pub is_dir: bool,
+    pub size: u64,
+    pub modified: String,
+    pub permissions: String,
+}
+
+#[derive(Clone, Debug)]
+#[allow(dead_code)]
+pub struct ExplorerPanel {
+    pub path: String,
+    pub items: Vec<ExplorerEntry>,
+    pub all_items: Vec<ExplorerEntry>,
+    pub selected: usize,
+    pub scroll_offset: usize,
+    pub filter: String,
+    pub filter_active: bool,
+    pub rename_active: bool,
+    pub rename_buffer: String,
+    pub loading: bool,
+}
+
+impl Default for ExplorerPanel {
+    fn default() -> Self {
+        Self {
+            path: String::new(),
+            items: Vec::new(),
+            all_items: Vec::new(),
+            selected: 0,
+            scroll_offset: 0,
+            filter: String::new(),
+            filter_active: false,
+            rename_active: false,
+            rename_buffer: String::new(),
+            loading: true,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ExplorerState {
+    pub focus: ExplorerFocus,
+    pub host: ExplorerPanel,
+    pub container: ExplorerPanel,
+    pub container_id: String,
+    pub transfer_message: Option<String>,
+    pub transfer_error: Option<String>,
+    pub transfer_message_clear_tick: u64,
+    pub transfer_error_clear_tick: u64,
+}
+
+impl Default for ExplorerState {
+    fn default() -> Self {
+        Self {
+            focus: ExplorerFocus::Left,
+            host: ExplorerPanel::default(),
+            container: ExplorerPanel::default(),
+            container_id: String::new(),
+            transfer_message: None,
+            transfer_error: None,
+            transfer_message_clear_tick: 0,
+            transfer_error_clear_tick: 0,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct AppState {
     pub navigation: NavigationState,
@@ -257,6 +333,7 @@ pub struct AppState {
     pub statistics: StatisticsState,
     pub networks: NetworksState,
     pub volumes: VolumesState,
+    pub explorer: ExplorerState,
     pub config: OmdockerConfig,
     pub keymap: KeyMap,
     pub update_available: Option<(String, String)>,
@@ -280,6 +357,7 @@ impl AppState {
             statistics: StatisticsState::default(),
             networks: NetworksState::default(),
             volumes: VolumesState::default(),
+            explorer: ExplorerState::default(),
             selected_tab: mode::mode_to_tab(&mode::Mode::Containers).unwrap_or(0),
             previous_tab: 0,
             config: OmdockerConfig::default(),

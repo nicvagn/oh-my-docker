@@ -6,3 +6,4 @@ pub mod events;
 pub mod statistics;
 pub mod networks;
 pub mod volumes;
+pub mod explorer;

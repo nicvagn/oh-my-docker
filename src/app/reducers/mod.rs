@@ -1,5 +1,6 @@
 pub mod container;
 pub mod event;
+pub mod explorer;
 pub mod image;
 pub mod log;
 pub mod navigation;

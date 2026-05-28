@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::app::event::AppEvent;
 use crate::app::mode::Mode;
 use crate::app::state::AppState;
@@ -26,6 +26,9 @@ pub fn handle_details_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
                 _ => AppEvent::StartContainer(cid),
             }
         });
+    }
+    if code == KeyCode::Char('x') && mods == KeyModifiers::NONE {
+        return state.navigation.details.as_ref().map(|d| AppEvent::Navigate(Mode::Explorer(d.id.clone())));
     }
     if km.is_navigate_up(code, mods) || code == KeyCode::Up {
         return Some(AppEvent::ScrollDetails(-1));

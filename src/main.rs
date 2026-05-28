@@ -168,7 +168,7 @@ async fn main() -> Result<()> {
             match status {
                 Ok(s) if s.success() => {
                     let c = app::reducer::reduce(&mut state, app::event::AppEvent::CloseShell);
-                    handle_commands(c, &docker, &event_tx);
+                    handle_commands(c, &docker, &event_tx, &state);
                 }
                 _ => {
                     let msg = format!("Shell exec failed (container may not have '{}')", shell.shell);
@@ -195,7 +195,7 @@ fn process_event(mut state: app::state::AppState, event: app::event::AppEvent, d
     let commands = app::reducer::reduce(&mut state, event);
     let needs_save = commands.iter().any(|c| matches!(c, Command::SaveConfig));
     let cmds: Vec<Command> = commands.into_iter().filter(|c| !matches!(c, Command::SaveConfig)).collect();
-    if let Some(handle) = handle_commands(cmds, docker, tx) {
+    if let Some(handle) = handle_commands(cmds, docker, tx, &state) {
         if let Some(ref logs) = state.navigation.logs {
             state.log_streams.insert(logs.container_id.clone(), handle);
         }
@@ -209,12 +209,15 @@ fn process_event(mut state: app::state::AppState, event: app::event::AppEvent, d
     state
 }
 
-fn handle_commands(commands: Vec<Command>, docker: &Option<Docker>, tx: &mpsc::UnboundedSender<app::event::AppEvent>) -> Option<tokio::task::AbortHandle> {
+fn handle_commands(commands: Vec<Command>, docker: &Option<Docker>, tx: &mpsc::UnboundedSender<app::event::AppEvent>, state: &app::state::AppState) -> Option<tokio::task::AbortHandle> {
     for cmd in commands {
         match cmd {
             Command::CheckUpdate => update::spawn_check_update(tx.clone()),
             Command::DownloadUpdate { version, download_url } => {
                 update::spawn_download_update(tx.clone(), version, download_url);
+            }
+            Command::ListContainerDir(_, _) | Command::ListHostDir(_) | Command::CopyToContainer(_, _, _) | Command::CopyFromContainer(_, _, _) | Command::DeleteHostFile(_) | Command::DeleteContainerFile(_, _) | Command::RenameHostFile(_, _) | Command::RenameContainerFile(_, _, _) => {
+                handle_explorer_commands(cmd, docker.as_ref().unwrap(), tx, state);
             }
             _ => {
                 let Some(ref d) = docker else { continue };
@@ -256,6 +259,121 @@ fn handle_commands(commands: Vec<Command>, docker: &Option<Docker>, tx: &mpsc::U
         }
     }
     None
+}
+
+fn handle_explorer_commands(
+    cmd: Command,
+    docker: &Docker,
+    tx: &mpsc::UnboundedSender<app::event::AppEvent>,
+    _state: &app::state::AppState,
+) {
+    match cmd {
+        Command::ListContainerDir(container_id, path) => {
+            docker::explorer::spawn_list_container_dir(docker.clone(), tx.clone(), container_id, path);
+        }
+        Command::ListHostDir(path) => {
+            let tx = tx.clone();
+            tokio::spawn(async move {
+                match docker::explorer::list_host_dir(&path).await {
+                    Ok(entries) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerHostDirUpdated(path, entries));
+                    }
+                    Err(e) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferError(format!("Failed to list directory: {}", e)));
+                    }
+                }
+            });
+        }
+        Command::CopyToContainer(container_id, host_path, container_path) => {
+            let d = docker.clone();
+            let tx = tx.clone();
+            tokio::spawn(async move {
+                match docker::explorer::copy_to_container(&d, &container_id, host_path, container_path).await {
+                    Ok(()) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferComplete("Copy complete!".to_string()));
+                    }
+                    Err(e) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferError(format!("Copy failed: {}", e)));
+                    }
+                }
+            });
+        }
+        Command::CopyFromContainer(container_id, container_path, host_dest) => {
+            let d = docker.clone();
+            let tx = tx.clone();
+            tokio::spawn(async move {
+                match docker::explorer::copy_from_container(&d, &container_id, container_path, &host_dest).await {
+                    Ok(_) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferComplete("Copy complete!".to_string()));
+                    }
+                    Err(e) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferError(format!("Copy failed: {}", e)));
+                    }
+                }
+            });
+        }
+        Command::DeleteHostFile(path) => {
+            let tx = tx.clone();
+            let path_clone = path.clone();
+            tokio::spawn(async move {
+                let meta = std::fs::symlink_metadata(&path_clone);
+                let result = match meta {
+                    Ok(m) if m.is_dir() => tokio::fs::remove_dir_all(&path_clone).await,
+                    _ => tokio::fs::remove_file(&path_clone).await,
+                };
+                match result {
+                    Ok(()) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferComplete("Deleted".to_string()));
+                    }
+                    Err(e) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferError(format!("Delete failed: {}", e)));
+                    }
+                }
+            });
+        }
+        Command::DeleteContainerFile(container_id, path) => {
+            let d = docker.clone();
+            let tx = tx.clone();
+            tokio::spawn(async move {
+                match docker::explorer::delete_in_container(&d, &container_id, &path).await {
+                    Ok(()) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferComplete("Deleted".to_string()));
+                    }
+                    Err(e) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferError(format!("Delete failed: {}", e)));
+                    }
+                }
+            });
+        }
+        Command::RenameHostFile(old_path, new_path) => {
+            let tx = tx.clone();
+            tokio::spawn(async move {
+                match tokio::fs::rename(&old_path, &new_path).await {
+                    Ok(()) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferComplete("Renamed".to_string()));
+                    }
+                    Err(e) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferError(format!("Rename failed: {}", e)));
+                    }
+                }
+            });
+        }
+        Command::RenameContainerFile(container_id, old_path, new_path) => {
+            let d = docker.clone();
+            let tx = tx.clone();
+            tokio::spawn(async move {
+                match docker::explorer::rename_in_container(&d, &container_id, &old_path, &new_path).await {
+                    Ok(()) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferComplete("Renamed".to_string()));
+                    }
+                    Err(e) => {
+                        let _ = tx.send(app::event::AppEvent::ExplorerTransferError(format!("Rename failed: {}", e)));
+                    }
+                }
+            });
+        }
+        _ => {}
+    }
 }
 
 fn init_terminal() -> Result<Terminal<CrosstermBackend<std::io::Stdout>>> {

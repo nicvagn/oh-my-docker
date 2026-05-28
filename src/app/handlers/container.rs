@@ -57,6 +57,11 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
                 .and_then(|&idx| state.containers.items.get(idx))
                 .map(|c| AppEvent::Navigate(Mode::ShellConfig(c.id.clone())));
         }
+        if code == KeyCode::Char('x') && mods == KeyModifiers::NONE {
+            return state.containers.filtered.get(state.containers.selected)
+                .and_then(|&idx| state.containers.items.get(idx))
+                .map(|c| AppEvent::Navigate(Mode::Explorer(c.id.clone())));
+        }
         if km.is_restart(code, mods) {
             return state.containers.filtered.get(state.containers.selected)
                 .and_then(|&idx| state.containers.items.get(idx))

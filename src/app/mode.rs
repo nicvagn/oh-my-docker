@@ -13,6 +13,7 @@ pub enum Mode {
     Statistics,
     Networks,
     Volumes,
+    Explorer(String),
     Help,
     ConfirmDialog {
         prompt: String,

@@ -25,6 +25,7 @@ pub fn staleness_indicator(last_updated: Option<std::time::Instant>, interval_ms
 pub mod column_picker;
 pub mod containers;
 pub mod container_details;
+pub mod explorer;
 pub mod logs;
 pub mod images;
 pub mod shell;
@@ -110,6 +111,7 @@ fn render_content(frame: &mut Frame, state: &mut AppState, area: Rect) {
         Mode::Statistics => statistics::render(frame, area, &state.statistics),
         Mode::Networks => networks::render(frame, area, &mut state.networks, &state.config.network_columns, state.config.polling.networks_ms),
         Mode::Volumes => volumes::render(frame, area, &mut state.volumes, &state.config.volume_columns, state.config.polling.volumes_ms),
+        Mode::Explorer(_) => explorer::render(frame, area, state),
         Mode::Help => help::render(frame, area, &mut state.navigation.help, &state.config),
         Mode::ConfirmDialog { .. } => confirm_dialog::render(frame, area, state.navigation.mode_stack.current()),
     }

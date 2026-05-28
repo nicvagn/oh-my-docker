@@ -17,6 +17,16 @@ pub fn reduce(state: &mut AppState, event: AppEvent) -> Vec<Command> {
                     state.error_persistent = false;
                 }
             }
+            if state.explorer.transfer_message.is_some()
+                && state.tick_count >= state.explorer.transfer_message_clear_tick
+            {
+                state.explorer.transfer_message = None;
+            }
+            if state.explorer.transfer_error.is_some()
+                && state.tick_count >= state.explorer.transfer_error_clear_tick
+            {
+                state.explorer.transfer_error = None;
+            }
         }
 
         AppEvent::CheckUpdate => {
@@ -155,6 +165,31 @@ pub fn reduce(state: &mut AppState, event: AppEvent) -> Vec<Command> {
                 | AppEvent::ShellConfigFocusNext
                 | AppEvent::ShellConfigFocusPrev => {
                     commands.extend(crate::app::reducers::shell::reduce(state, &event));
+                }
+                AppEvent::ExplorerSelect
+                | AppEvent::ExplorerCopyToContainer
+                | AppEvent::ExplorerCopyFromContainer
+                | AppEvent::ExplorerTransferComplete(_)
+                | AppEvent::ExplorerTransferError(_)
+                | AppEvent::ExplorerFilter(_)
+                | AppEvent::ExplorerContainerDirUpdated(_, _, _)
+                | AppEvent::ExplorerHostGoUp
+                | AppEvent::ExplorerContainerGoUp
+                | AppEvent::ExplorerHostSelect(_)
+                | AppEvent::ExplorerContainerSelect(_)
+                | AppEvent::ExplorerHostEnterDir(_)
+                | AppEvent::ExplorerContainerEnterDir(_)
+                | AppEvent::ExplorerHostRefresh
+                | AppEvent::ExplorerContainerRefresh
+                | AppEvent::ExplorerHostActivateFilter
+                | AppEvent::ExplorerContainerActivateFilter
+                | AppEvent::ExplorerFilterSubmit
+                | AppEvent::ExplorerHostActivateRename
+                | AppEvent::ExplorerContainerActivateRename
+                | AppEvent::ExplorerRenameUpdate(_)
+                | AppEvent::ExplorerRenameSubmit
+                | AppEvent::ExplorerHostDirUpdated(_, _) => {
+                    commands.extend(crate::app::reducers::explorer::reduce(state, &event));
                 }
                 _ => {}
             }

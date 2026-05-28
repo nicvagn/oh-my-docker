@@ -73,6 +73,27 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
             }
             state.navigation.mode_stack.push(mode.clone());
         }
+        AppEvent::Navigate(mode @ Mode::Explorer(_)) => {
+            if let Mode::Explorer(id) = &mode {
+                state.explorer.container_id = id.clone();
+                state.explorer.host.path = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+                state.explorer.host.items.clear();
+                state.explorer.host.selected = 0;
+                state.explorer.host.loading = true;
+                state.explorer.container.path = "/".to_string();
+                state.explorer.container.items.clear();
+                state.explorer.container.selected = 0;
+                state.explorer.container.loading = true;
+                state.explorer.transfer_message = None;
+                state.explorer.transfer_error = None;
+                state.explorer.transfer_message_clear_tick = 0;
+                state.explorer.transfer_error_clear_tick = 0;
+                state.explorer.focus = crate::app::state::ExplorerFocus::Left;
+                commands.push(Command::ListHostDir(state.explorer.host.path.clone()));
+                commands.push(Command::ListContainerDir(id.clone(), state.explorer.container.path.clone()));
+            }
+            state.navigation.mode_stack.push(mode.clone());
+        }
         AppEvent::Navigate(mode) => {
             if mode::mode_to_tab(mode).is_some() {
                 if *mode == Mode::Help {
@@ -153,6 +174,8 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
                     ConfirmAction::PruneUnusedImages => commands.push(Command::PruneUnusedImages),
                     ConfirmAction::RemoveNetwork(id) => commands.push(Command::RemoveNetwork(id)),
                     ConfirmAction::RemoveVolume(name) => commands.push(Command::RemoveVolume(name)),
+                    ConfirmAction::DeleteHostFile(path) => commands.push(Command::DeleteHostFile(path)),
+                    ConfirmAction::DeleteContainerFile(id, path) => commands.push(Command::DeleteContainerFile(id, path)),
                 }
             }
         }
