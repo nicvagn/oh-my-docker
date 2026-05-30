@@ -15,12 +15,12 @@ pub fn render(frame: &mut Frame, area: Rect, state: &mut AppState) {
     }
 
     let show_toast = state.explorer.transfer_message.is_some() || state.explorer.transfer_error.is_some();
-    let footer_height: u16 = if show_toast { 3 } else { 1 };
+    let toast_height: u16 = if show_toast { 2 } else { 0 };
     let main_area = Rect {
         x: area.x,
         y: area.y,
         width: area.width,
-        height: area.height.saturating_sub(footer_height),
+        height: area.height.saturating_sub(toast_height),
     };
 
     let chunks = Layout::default()
@@ -72,31 +72,6 @@ pub fn render(frame: &mut Frame, area: Rect, state: &mut AppState) {
         );
     }
 
-    let footer_area = Rect {
-        x: area.x,
-        y: area.y + area.height.saturating_sub(1),
-        width: area.width,
-        height: 1,
-    };
-    render_footer(frame, footer_area);
-}
-
-fn render_footer(frame: &mut Frame, area: Rect) {
-    let text = Line::from(vec![
-        Span::styled(" Tab:switch ", Style::default().fg(Color::Cyan)),
-        Span::styled(" j/k:nav ", Style::default().fg(Color::DarkGray)),
-        Span::styled(" Enter:dir ", Style::default().fg(Color::Cyan)),
-        Span::styled(" Bksp:up ", Style::default().fg(Color::DarkGray)),
-        Span::styled(" PgUp/Dn ", Style::default().fg(Color::Cyan)),
-        Span::styled(" g/G:ends ", Style::default().fg(Color::DarkGray)),
-        Span::styled(" ^C:copy ", Style::default().fg(Color::Cyan)),
-        Span::styled(" d:del ", Style::default().fg(Color::Cyan)),
-        Span::styled(" r:ren ", Style::default().fg(Color::Cyan)),
-        Span::styled(" R:ref ", Style::default().fg(Color::DarkGray)),
-        Span::styled(" /:fil ", Style::default().fg(Color::DarkGray)),
-        Span::styled(" Esc ", Style::default().fg(Color::DarkGray)),
-    ]);
-    frame.render_widget(Paragraph::new(text).style(Style::default().fg(Color::DarkGray)), area);
 }
 
 fn render_prompt(frame: &mut Frame, area: Rect) {

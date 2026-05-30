@@ -78,7 +78,6 @@ pub fn render(frame: &mut Frame, area: Rect, state: &mut LogState) {
             Line::from(""),
         ]);
         frame.render_widget(Paragraph::new(text).block(block), area);
-        render_bottom_bar(frame, inner, state.paused);
         return;
     }
 
@@ -122,41 +121,9 @@ pub fn render(frame: &mut Frame, area: Rect, state: &mut LogState) {
     let paragraph = Paragraph::new(text).block(block);
     frame.render_widget(paragraph, area);
 
-    render_bottom_bar(frame, inner, state.paused);
-
     if state.search_active {
         render_search_bar(frame, inner, &state.search);
     }
-}
-
-fn render_bottom_bar(frame: &mut Frame, area: Rect, paused: bool) {
-    let bar = Rect {
-        x: area.x + 1,
-        y: area.y + area.height.saturating_sub(1),
-        width: area.width.saturating_sub(2),
-        height: 1,
-    };
-    let text = if paused {
-        if area.width >= 55 {
-            "  r resume   / find   T:timestamps   ↑↓/k j line   PgUp/PgDn page   g/G top/bottom   s:export   Esc back"
-        } else if area.width >= 40 {
-            "  r resume   / find   T:timestamps   PgUp/PgDn page   s:export   Esc back"
-        } else {
-            "  r resume   / find   T:timestamps   s:export   Esc back"
-        }
-    } else {
-        if area.width >= 55 {
-            "  p pause   / find   T:timestamps   ↑↓/k j line   PgUp/PgDn page   g/G top/bottom   s:export   Esc back"
-        } else if area.width >= 40 {
-            "  p pause   / find   T:timestamps   PgUp/PgDn page   s:export   Esc back"
-        } else {
-            "  p pause   / find   T:timestamps   s:export   Esc back"
-        }
-    };
-    frame.render_widget(
-        Paragraph::new(text).style(Style::default().fg(Color::DarkGray)),
-        bar,
-    );
 }
 
 fn render_search_bar(frame: &mut Frame, area: Rect, search: &str) {

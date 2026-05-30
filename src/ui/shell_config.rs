@@ -87,13 +87,6 @@ pub fn render(frame: &mut Frame, area: Rect, config: &ShellConfigState) {
         )));
     }
 
-    // Footer
-    lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled(
-        " ↑↓/Tab:next field  Enter:launch shell  Esc:cancel  Type:edit  Bksp:delete",
-        Style::default().fg(Color::DarkGray),
-    )));
-
     let paragraph = Paragraph::new(Text::from(lines))
         .style(Style::default().fg(Color::White))
         .block(Block::default());

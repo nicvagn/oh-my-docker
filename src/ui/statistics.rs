@@ -52,22 +52,6 @@ pub fn render(frame: &mut Frame, area: Rect, state: &StatisticsState, tick_count
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(indicator_color));
 
-    let inner = block.inner(area);
-
-    if state.loading && state.items.is_empty() {
-        let spinner = crate::ui::spinner_char(tick_count);
-        let text = Text::from(vec![
-            Line::from(""),
-            Line::from(Span::styled(
-                format!("  {} Loading statistics...", spinner),
-                Style::default().fg(Color::Yellow),
-            )),
-            Line::from(""),
-        ]);
-        frame.render_widget(Paragraph::new(text).block(block), area);
-        return;
-    }
-
     if state.items.is_empty() && !state.loading {
         let text = Text::from(vec![
             Line::from(Span::styled("  No running containers", Style::default().fg(Color::Yellow))),
@@ -166,15 +150,4 @@ pub fn render(frame: &mut Frame, area: Rect, state: &StatisticsState, tick_count
 
     let table = Table::new(rows, widths).header(header_row).block(block);
     frame.render_widget(table, area);
-
-    let footer = Rect {
-        x: inner.x,
-        y: inner.y + inner.height.saturating_sub(1),
-        width: inner.width,
-        height: 1,
-    };
-    frame.render_widget(
-        Paragraph::new(" left/right:navigate  t:toggle ").style(Style::default().fg(Color::DarkGray)),
-        footer,
-    );
 }

@@ -302,13 +302,6 @@ pub fn render_run(frame: &mut Frame, area: Rect, run: &ImageRunState) {
         )));
     }
 
-    // Footer
-    lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled(
-        " ↑↓ Tab:next field  Enter:run  Esc:cancel  Type:edit  Bksp:delete  a:toggle  ^A:advanced",
-        Style::default().fg(Color::DarkGray),
-    )));
-
     let paragraph = Paragraph::new(Text::from(lines))
         .style(Style::default().fg(Color::White))
         .block(Block::default());

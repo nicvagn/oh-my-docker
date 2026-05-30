@@ -29,8 +29,6 @@ pub fn render_placeholder(frame: &mut Frame, _area: Rect) {
 }
 
 pub fn render(frame: &mut Frame, area: Rect, details: &mut DetailsState, containers: &ContainersState) {
-    let footer_height = 1u16;
-
     let block = Block::default()
         .title(format!(" CONTAINER DETAILS — {} ", details.container_id))
         .title_alignment(Alignment::Center)
@@ -39,21 +37,9 @@ pub fn render(frame: &mut Frame, area: Rect, details: &mut DetailsState, contain
         .border_style(Style::default().fg(theme::view_border()));
 
     let inner = block.inner(area);
-    let content_area = Rect {
-        x: inner.x,
-        y: inner.y,
-        width: inner.width,
-        height: inner.height.saturating_sub(footer_height),
-    };
-    let footer_area = Rect {
-        x: inner.x,
-        y: inner.y + content_area.height,
-        width: inner.width,
-        height: footer_height,
-    };
 
     let text = build_text(details, containers);
-    let max_offset = text.height().saturating_sub(content_area.height as usize);
+    let max_offset = text.height().saturating_sub(inner.height as usize);
     let scroll_offset = details.scroll_offset.min(max_offset);
     details.scroll_offset = scroll_offset;
 
@@ -63,22 +49,6 @@ pub fn render(frame: &mut Frame, area: Rect, details: &mut DetailsState, contain
         .block(block);
 
     frame.render_widget(paragraph, area);
-
-    let footer_spans = vec![
-        Span::styled(" l:logs ", Style::default().fg(Color::Cyan)),
-        Span::styled(" s:shell ", Style::default().fg(Color::Cyan)),
-        Span::styled(" r:restart ", Style::default().fg(Color::Cyan)),
-        Span::styled(" t:start/stop ", Style::default().fg(Color::Cyan)),
-        Span::styled(" x:explorer ", Style::default().fg(Color::Cyan)),
-        Span::styled(" j/k↓↑/PgUp/PgDn scroll ", Style::default().fg(Color::Cyan)),
-        Span::styled(" Esc:back ", Style::default().fg(Color::DarkGray)),
-    ];
-
-    frame.render_widget(
-        Paragraph::new(Line::from(footer_spans))
-            .style(Style::default().fg(Color::DarkGray)),
-        footer_area,
-    );
 }
 
 fn build_text(details: &DetailsState, containers: &ContainersState) -> Text<'static> {

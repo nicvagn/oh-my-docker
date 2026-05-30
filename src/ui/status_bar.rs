@@ -14,13 +14,13 @@ fn shortcuts(mode: &Mode) -> &'static str {
             " j/k:scroll  PgUp/PgDn:page  g/G:top/bot  l:logs  s:shell  x:explorer  t:start/stop  r:restart  Esc:back "
         }
         Mode::Logs(_) => {
-            " j/k:scroll  PgUp/PgDn:page  g/G:top/bot  /:search  p:pause  T:timestamps  Esc:back "
+            " j/k:scroll  PgUp/PgDn:page  g/G:top/bot  /:search  p:pause  T:timestamps  s:export  Esc:back "
         }
         Mode::Images => {
             " /:filter  r:run  d:delete  D:dangling  p:prune  Ctrl+U/D:page  g/G:top/bot "
         }
         Mode::ImageRun(_) => {
-            " Tab/↓:next  ↑:prev  Enter:run  a:toggle  Esc:back "
+            " Tab/↓:next  ↑:prev  Enter:run  a:toggle  ^A:advanced  Esc:back "
         }
         Mode::Shell(_) => {
             " Type commands  Ctrl+D/Ctrl+C:exit  Esc:close "
@@ -41,7 +41,7 @@ fn shortcuts(mode: &Mode) -> &'static str {
             " d:delete  Esc:back "
         }
         Mode::Explorer(_) => {
-            " Tab:focus  ↑/↓:nav  Enter:dir  Backspace:up  /:filter  r:rename  c:copy  Esc:back "
+            " Tab:focus  ↑/↓:nav  Enter:dir  Backspace:up  PgUp/PgDn:page  g/G:top/bot  /:filter  r:rename  R:refresh  d:delete  ^C:copy  Esc:back "
         }
         Mode::Help => {
             " Esc:back  j/k:scroll  PgUp/PgDn:page  g/G:top/bot "
