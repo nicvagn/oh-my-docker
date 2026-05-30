@@ -2,23 +2,58 @@ use ratatui::layout::Rect;
 use ratatui::widgets::Paragraph;
 use ratatui::Frame;
 
+use crate::app::mode::Mode;
 use crate::ui::theme;
 
-fn shortcuts(selected_tab: usize) -> &'static str {
-    match selected_tab {
-        0 => " Enter:details  l:logs  s:shell  /:filter  t:start/stop  r:restart  d:delete  Space:select  S:status  Ctrl+U/D:page  g/G:top/bot ",
-        1 => " /:filter  r:run  d:delete  D:dangling  p:prune  Ctrl+U/D:page  g/G:top/bot ",
-        2 => " d:delete ",
-        3 => " d:delete ",
-        4 => " /:filter ",
-        5 => " left/right:navigate  t:direction ",
-        6 => " Esc:back  arrows:scroll  j/k:scroll  PgUp/PgDn:page  g/G:top/bottom ",
-        _ => "",
+fn shortcuts(mode: &Mode) -> &'static str {
+    match mode {
+        Mode::Containers => {
+            " Enter:details  l:logs  s:shell  /:filter  S:status  Ctrl+U/D:page  g/G:top/bot  t:start/stop  r:restart  d:delete  Space:select "
+        }
+        Mode::ContainerDetails(_) => {
+            " j/k:scroll  PgUp/PgDn:page  g/G:top/bot  l:logs  s:shell  x:explorer  t:start/stop  r:restart  Esc:back "
+        }
+        Mode::Logs(_) => {
+            " j/k:scroll  PgUp/PgDn:page  g/G:top/bot  /:search  p:pause  T:timestamps  Esc:back "
+        }
+        Mode::Images => {
+            " /:filter  r:run  d:delete  D:dangling  p:prune  Ctrl+U/D:page  g/G:top/bot "
+        }
+        Mode::ImageRun(_) => {
+            " Tab/↓:next  ↑:prev  Enter:run  a:toggle  Esc:back "
+        }
+        Mode::Shell(_) => {
+            " Type commands  Ctrl+D/Ctrl+C:exit  Esc:close "
+        }
+        Mode::ShellConfig(_) => {
+            " Tab/↓:next  ↑:prev  Enter:save+launch  Esc:back "
+        }
+        Mode::Events => {
+            " /:filter  j/k:scroll  g/G:top/bot  Esc:back "
+        }
+        Mode::Statistics => {
+            " ←/→:sort field  t:direction  Esc:back "
+        }
+        Mode::Networks => {
+            " d:delete  Esc:back "
+        }
+        Mode::Volumes => {
+            " d:delete  Esc:back "
+        }
+        Mode::Explorer(_) => {
+            " Tab:focus  ↑/↓:nav  Enter:dir  Backspace:up  /:filter  r:rename  c:copy  Esc:back "
+        }
+        Mode::Help => {
+            " Esc:back  j/k:scroll  PgUp/PgDn:page  g/G:top/bot "
+        }
+        Mode::ConfirmDialog { .. } => {
+            " y:yes  n:no  Enter:yes  Esc:no "
+        }
     }
 }
 
-pub fn render(frame: &mut Frame, area: Rect, selected_tab: usize) {
-    let base = shortcuts(selected_tab);
+pub fn render(frame: &mut Frame, area: Rect, mode: &Mode) {
+    let base = shortcuts(mode);
     let pad = (area.width as usize).saturating_sub(base.len());
     let text = if pad > 0 {
         format!("{}{}", base, " ".repeat(pad))

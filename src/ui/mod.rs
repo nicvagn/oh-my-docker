@@ -56,10 +56,18 @@ pub fn render(frame: &mut Frame, state: &mut AppState) {
             .split(area);
 
         tabs_bar::render(frame, chunks[0], state.selected_tab, &state.containers.items);
-        status_bar::render(frame, chunks[2], state.selected_tab);
+        status_bar::render(frame, chunks[2], state.navigation.mode_stack.current());
         render_content(frame, state, chunks[1]);
     } else {
-        render_content(frame, state, area);
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Min(0),
+                Constraint::Length(1),
+            ])
+            .split(area);
+        status_bar::render(frame, chunks[1], state.navigation.mode_stack.current());
+        render_content(frame, state, chunks[0]);
     }
 
     if let Some(ref update) = state.update_available {
