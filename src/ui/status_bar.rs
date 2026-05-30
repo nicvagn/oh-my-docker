@@ -6,8 +6,8 @@ use crate::ui::theme;
 
 fn shortcuts(selected_tab: usize) -> &'static str {
     match selected_tab {
-        0 => " Enter:details  l:logs  s:shell  /:filter  t:start/stop  r:restart  d:delete  Space:select ",
-        1 => " /:filter  r:run  d:delete  D:dangling  p:prune ",
+        0 => " Enter:details  l:logs  s:shell  /:filter  t:start/stop  r:restart  d:delete  Space:select  S:status  Ctrl+U/D:page  g/G:top/bot ",
+        1 => " /:filter  r:run  d:delete  D:dangling  p:prune  Ctrl+U/D:page  g/G:top/bot ",
         2 => " d:delete ",
         3 => " d:delete ",
         4 => " /:filter ",

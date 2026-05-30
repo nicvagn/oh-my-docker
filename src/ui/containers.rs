@@ -37,7 +37,12 @@ pub fn render(frame: &mut Frame, area: Rect, state: &mut ContainersState, tick_c
     } else if state.selection_mode && !state.selected_ids.is_empty() {
         format!(" CONTAINERS {} ({}) [{}] ", indicator_char, state.filtered.len(), state.selected_ids.len())
     } else {
-        format!(" CONTAINERS {} ({}) ", indicator_char, state.filtered.len())
+        let status_tag = if state.status_filter.is_empty() {
+            String::new()
+        } else {
+            format!(" [{}]", state.status_filter)
+        };
+        format!(" CONTAINERS {} ({}){} ", indicator_char, state.filtered.len(), status_tag)
     };
 
     let block = Block::default()

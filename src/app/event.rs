@@ -143,6 +143,7 @@ pub enum AppEvent {
     ToggleSelectContainer(String),
     SelectAllContainers,
     BatchToggleContainers(Vec<String>),
+    CycleStatusFilter,
 
     LogLines(String, Vec<LogEntry>),
     TogglePause,

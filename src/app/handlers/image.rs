@@ -40,6 +40,23 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             let prev = state.images.selected.saturating_sub(1);
             return Some(AppEvent::SelectImage(prev));
         }
+        if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('u') {
+            let page = 20;
+            let prev = state.images.selected.saturating_sub(page);
+            return Some(AppEvent::SelectImage(prev));
+        }
+        if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('d') {
+            let page = 20;
+            let next = (state.images.selected + page).min(state.images.filtered.len().saturating_sub(1));
+            return Some(AppEvent::SelectImage(next));
+        }
+        if km.is_jump_top(code, mods) {
+            return Some(AppEvent::SelectImage(0));
+        }
+        if km.is_jump_bottom(code, mods) {
+            let last = state.images.filtered.len().saturating_sub(1);
+            return Some(AppEvent::SelectImage(last));
+        }
         if km.is_run_image(code, mods) {
             return state.images.filtered.get(state.images.selected)
                 .and_then(|&idx| state.images.items.get(idx))

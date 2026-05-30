@@ -111,7 +111,8 @@ pub fn reduce(state: &mut AppState, event: AppEvent) -> Vec<Command> {
                 | AppEvent::SelectAllContainers
                 | AppEvent::ToggleColumnPicker
                 | AppEvent::ToggleColumn(_)
-                | AppEvent::BatchToggleContainers(_) => {
+                | AppEvent::BatchToggleContainers(_)
+                | AppEvent::CycleStatusFilter => {
                     commands.extend(crate::app::reducers::container::reduce(state, &event));
                 }
                 AppEvent::ImagesUpdated(_)

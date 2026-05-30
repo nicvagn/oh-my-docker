@@ -19,6 +19,13 @@ fn apply_filter(state: &mut AppState) {
             state.containers.filtered = results.into_iter().map(|(i, _)| i).collect();
         }
     }
+    // Apply status filter if active
+    if !state.containers.status_filter.is_empty() {
+        let sf = state.containers.status_filter.clone();
+        state.containers.filtered.retain(|&idx| {
+            state.containers.items.get(idx).map(|c| c.state == sf).unwrap_or(false)
+        });
+    }
     // Reorder filtered to match grouped display order
     let mut grouped: std::collections::HashMap<String, Vec<usize>> = std::collections::HashMap::new();
     for &idx in &state.containers.filtered {
@@ -110,6 +117,16 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
                 }
                 commands.push(Command::SaveConfig);
             }
+        }
+        AppEvent::CycleStatusFilter => {
+            state.containers.status_filter = match state.containers.status_filter.as_str() {
+                "" => "running".to_string(),
+                "running" => "exited".to_string(),
+                "exited" => "paused".to_string(),
+                _ => String::new(),
+            };
+            state.containers.selected = 0;
+            apply_filter(state);
         }
         AppEvent::BatchToggleContainers(ids) => {
             for id in ids {

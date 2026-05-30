@@ -41,6 +41,23 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             let prev = state.containers.selected.saturating_sub(1);
             return Some(AppEvent::SelectContainer(prev));
         }
+        if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('u') {
+            let page = 20;
+            let prev = state.containers.selected.saturating_sub(page);
+            return Some(AppEvent::SelectContainer(prev));
+        }
+        if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('d') {
+            let page = 20;
+            let next = (state.containers.selected + page).min(state.containers.filtered.len().saturating_sub(1));
+            return Some(AppEvent::SelectContainer(next));
+        }
+        if km.is_jump_top(code, mods) {
+            return Some(AppEvent::SelectContainer(0));
+        }
+        if km.is_jump_bottom(code, mods) {
+            let last = state.containers.filtered.len().saturating_sub(1);
+            return Some(AppEvent::SelectContainer(last));
+        }
         if km.is_open_details(code, mods) {
             return Some(AppEvent::ShowDetails);
         }
@@ -131,6 +148,9 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
             } else {
                 return None;
             }
+        }
+        if code == KeyCode::Char('S') && (mods == KeyModifiers::NONE || mods == KeyModifiers::SHIFT) {
+            return Some(AppEvent::CycleStatusFilter);
         }
         if code == KeyCode::Esc {
             if state.containers.selection_mode {

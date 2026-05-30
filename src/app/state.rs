@@ -30,6 +30,7 @@ pub struct ContainersState {
     pub show_column_picker: bool,
     pub column_picker_selection: usize,
     pub scroll_offset: usize,
+    pub status_filter: String,
 }
 
 impl Default for ContainersState {
@@ -52,6 +53,7 @@ impl Default for ContainersState {
             show_column_picker: false,
             column_picker_selection: 0,
             scroll_offset: 0,
+            status_filter: String::new(),
         }
     }
 }

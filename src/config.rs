@@ -296,6 +296,7 @@ impl Keybindings {
             format!("    {}           Search/filter", key_first(&self.search)),
             format!("    {}           Toggle selection mode", key_first(&self.toggle_selection)),
             format!("    {}           Select all (in selection mode)", key_first(&self.select_all)),
+            "    S           Cycle status filter (All/Running/Stopped/Paused)".to_string(),
             "    Ctrl+Y      Copy container ID".to_string(),
             "    Ctrl+O      Column picker".to_string(),
             "".to_string(),
