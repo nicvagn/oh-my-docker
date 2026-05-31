@@ -12,9 +12,11 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
     let mut commands = Vec::new();
     match event {
         AppEvent::ImagesUpdated(images) => {
-            state.images.update_items(images.clone(), |_| true);
+            state.images.items = images.clone();
+            state.images.loading = false;
             state.images.last_updated = Some(Instant::now());
             apply_filter(state);
+            state.images.apply_sort();
         }
         AppEvent::SelectImage(idx) if *idx < state.images.filtered.len() => {
             state.images.selected = *idx;

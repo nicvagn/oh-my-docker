@@ -30,8 +30,9 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
                 .and_then(|&idx| state.containers.items.get(idx))
                 .map(|c| c.id.clone());
 
-            state.containers.update_items(containers.clone(), |_| true);
+            state.containers.items = containers.clone();
             state.containers.loading = false;
+            state.containers.last_updated = Some(std::time::Instant::now());
             state.container_extra.docker_connected = true;
             apply_filter(state);
 
