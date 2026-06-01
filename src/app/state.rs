@@ -110,11 +110,12 @@ pub struct StatisticsState {
     pub sort_by: StatSort,
     pub sort_ascending: bool,
     pub last_updated: Option<Instant>,
+    pub scroll_offset: usize,
 }
 
 impl Default for StatisticsState {
     fn default() -> Self {
-        Self { items: Vec::new(), loading: true, sort_by: StatSort::Cpu, sort_ascending: false, last_updated: None }
+        Self { items: Vec::new(), loading: true, sort_by: StatSort::Cpu, sort_ascending: false, last_updated: None, scroll_offset: 0 }
     }
 }
 

@@ -202,6 +202,7 @@ pub enum AppEvent {
     VolumesUpdated(Vec<VolumeEntry>),
     SelectVolume(usize),
 
+    ScrollStatistics(i32),
     CycleSortStat(i32),
     ToggleSortDirection,
 

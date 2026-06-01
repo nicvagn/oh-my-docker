@@ -25,6 +25,7 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
             state.statistics.items = items;
             state.statistics.loading = false;
             state.statistics.last_updated = Some(Instant::now());
+            state.statistics.scroll_offset = state.statistics.scroll_offset.min(state.statistics.items.len().saturating_sub(1));
         }
         AppEvent::CycleSortStat(dir) => {
             let variants = [
@@ -45,6 +46,22 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
         }
         AppEvent::ToggleSortDirection => {
             state.statistics.sort_ascending = !state.statistics.sort_ascending;
+        }
+        AppEvent::ScrollStatistics(delta) => {
+            let len = state.statistics.items.len();
+            if len == 0 {
+                state.statistics.scroll_offset = 0;
+            } else {
+                let max = len.saturating_sub(1);
+                if *delta == i32::MAX {
+                    state.statistics.scroll_offset = max;
+                } else if *delta == i32::MIN {
+                    state.statistics.scroll_offset = 0;
+                } else {
+                    state.statistics.scroll_offset =
+                        crate::util::scroll_offset(state.statistics.scroll_offset, *delta, max);
+                }
+            }
         }
         _ => {}
     }

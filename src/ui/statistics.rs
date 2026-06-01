@@ -2,7 +2,7 @@ use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
-use ratatui::widgets::{Block, Borders, Cell, Paragraph, BorderType, Row, Table};
+use ratatui::widgets::{Block, Borders, Cell, Paragraph, BorderType, Row, Table, TableState};
 
 use crate::app::state::{StatSort, StatisticsState};
 
@@ -148,6 +148,10 @@ pub fn render(frame: &mut Frame, area: Rect, state: &StatisticsState, tick_count
         })
         .collect();
 
+    let inner_height = block.inner(area).height as usize;
+    let scroll_offset = state.scroll_offset.min(rows.len().saturating_sub(inner_height));
+
+    let mut table_state = TableState::new().with_offset(scroll_offset);
     let table = Table::new(rows, widths).header(header_row).block(block);
-    frame.render_widget(table, area);
+    frame.render_stateful_widget(table, area, &mut table_state);
 }

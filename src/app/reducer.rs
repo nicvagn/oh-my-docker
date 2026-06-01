@@ -59,6 +59,14 @@ fn scroll_state(state: &mut AppState, dir: i32) {
             let new = (state.events.scroll_offset as i32 + dir).clamp(0, max) as usize;
             state.events.scroll_offset = new;
         }
+        Mode::Statistics => {
+            let len = state.statistics.items.len();
+            if len > 0 {
+                let max = len.saturating_sub(1);
+                let new = (state.statistics.scroll_offset as i32 + dir).clamp(0, max as i32) as usize;
+                state.statistics.scroll_offset = new;
+            }
+        }
         Mode::Help => {
             let new = (state.navigation.help.scroll_offset as i32 + dir).max(0) as usize;
             state.navigation.help.scroll_offset = new;
@@ -420,7 +428,8 @@ pub fn reduce(state: &mut AppState, event: AppEvent) -> Vec<Command> {
                     commands.extend(crate::app::reducers::event::reduce(state, &event));
                 }
                 AppEvent::StatisticsUpdated(_)
-                | AppEvent::CycleSortStat(_) => {
+                | AppEvent::CycleSortStat(_)
+                | AppEvent::ScrollStatistics(_) => {
                     commands.extend(crate::app::reducers::statistics::reduce(state, &event));
                 }
                 AppEvent::ToggleSortDirection => {
