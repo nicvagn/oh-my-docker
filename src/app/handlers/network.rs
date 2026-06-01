@@ -4,11 +4,6 @@ use crate::app::state::AppState;
 use crate::ui::resource_panel::{NetworkResource, Resource};
 
 pub fn handle_key_with_clipboard(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
-    if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('y') {
-        if let Some(n) = state.networks.items.get(state.networks.selected) {
-            return crate::app::handlers::clipboard_copy(&n.id);
-        }
-    }
     if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('o') {
         return Some(AppEvent::ToggleColumnPicker);
     }

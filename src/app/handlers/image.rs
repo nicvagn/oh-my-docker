@@ -143,16 +143,6 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
 }
 
 pub fn handle_key_with_clipboard(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
-    if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('y') {
-        if state.images.filter_active {
-            return handle_key(key, state);
-        }
-        if let Some(&idx) = state.images.filtered.get(state.images.selected) {
-            if let Some(img) = state.images.items.get(idx) {
-                return crate::app::handlers::clipboard_copy(&img.id);
-            }
-        }
-    }
     if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('o') {
         return Some(AppEvent::ToggleColumnPicker);
     }

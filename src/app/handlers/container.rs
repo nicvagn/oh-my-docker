@@ -178,13 +178,6 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
 }
 
 pub fn handle_key_with_clipboard(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
-    if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('y') {
-        if let Some(c) = state.containers.filtered.get(state.containers.selected)
-            .and_then(|&idx| state.containers.items.get(idx))
-        {
-            return crate::app::handlers::clipboard_copy(&c.id);
-        }
-    }
     if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('o') {
         return Some(AppEvent::ToggleColumnPicker);
     }

@@ -42,7 +42,6 @@ Requires Docker to be installed and the user to have access to the Docker socket
 - **Container details** — inspect metadata, env, volumes, networks, ports, labels; scrollable with `j`/`k`/`PgUp`/`PgDn`
 - **Multi-select mode** — press `Space` to enter selection mode, select individual containers, batch start/stop/delete
 - **Column picker** — hide/show columns in containers, images, networks, and volumes with `Ctrl+O`
-- **Clipboard** — copy container ID, image ID, network ID, or volume name with `Ctrl+Y`
 - **Live logs** — streaming with follow mode, pause/resume (`Space`/`p`), reconnect (`r`), search (`/`), scroll, jump-to-top/bottom, timestamp toggle (`T`), export to file (`s`/`Ctrl+S`)
 - **Shell access** — `docker exec -it` inside any container with configurable shell (`sh`, `bash`, `/bin/zsh`), user (`root`, `host` → `uid:gid`, or custom `user:group`), and working directory. Config per container persisted to `~/.config/omdocker/omdocker.toml`. TUI suspends, shell runs in the parent terminal, TUI resumes on exit
 - **Container file explorer** — browse and transfer files between host and container (`x` to open, `Tab` to switch panels, `Ctrl+C` to copy, `r` to rename, `d` to delete, `R` to refresh)
@@ -98,7 +97,6 @@ Requires Docker to be installed and the user to have access to the Docker socket
 | `Space` | Toggle selection mode; in selection mode, toggle single container |
 | `Ctrl+A` | Select all filtered containers (in selection mode) |
 | `Esc` | Exit selection mode |
-| `Ctrl+Y` | Copy container ID to clipboard |
 | `Ctrl+O` | Toggle column picker |
 
 ### Container Details
@@ -129,7 +127,6 @@ Requires Docker to be installed and the user to have access to the Docker socket
 | `D` | Remove all dangling (`<none>`) images |
 | `p` | Prune all unused images |
 | `/` | Activate fuzzy search |
-| `Ctrl+Y` | Copy image ID to clipboard |
 | `Ctrl+O` | Toggle column picker |
 
 ### Image Run Form
@@ -199,7 +196,6 @@ Live stats for running containers (CPU, memory, network, block I/O, PIDs), updat
 | `k` / `↑` | Navigate up |
 | `d` | Delete selected network |
 | `/` | Activate filter |
-| `Ctrl+Y` | Copy network ID to clipboard |
 | `Ctrl+O` | Toggle column picker |
 
 ### Volumes
@@ -211,7 +207,6 @@ Live stats for running containers (CPU, memory, network, block I/O, PIDs), updat
 | `d` | Delete selected volume |
 | `Enter` | Open volume file explorer |
 | `/` | Activate filter |
-| `Ctrl+Y` | Copy volume name to clipboard |
 | `Ctrl+O` | Toggle column picker |
 
 ### Explorer (Container / Volume)
@@ -268,7 +263,7 @@ src/
       navigation.rs    — Navigation/modal state reducer (modes, confirm dialog, help)
       explorer.rs      — File explorer state reducer (host, container, volume)
     handlers/
-      mod.rs           — Shared input handlers (filter input, clipboard)
+      mod.rs           — Shared input handlers (filter input)
       container.rs     — Container list input handler
       image.rs         — Image list + image run form input handler
       log.rs           — Log view input handler

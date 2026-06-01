@@ -5,11 +5,6 @@ use crate::app::state::AppState;
 use crate::ui::resource_panel::{VolumeResource, Resource};
 
 pub fn handle_key_with_clipboard(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
-    if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('y') {
-        if let Some(v) = state.volumes.items.get(state.volumes.selected) {
-            return crate::app::handlers::clipboard_copy(&v.name);
-        }
-    }
     if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('o') {
         return Some(AppEvent::ToggleColumnPicker);
     }

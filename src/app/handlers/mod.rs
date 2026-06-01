@@ -10,15 +10,6 @@ pub mod statistics;
 pub mod volume;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use crate::app::event::AppEvent;
-
-pub fn clipboard_copy(value: &str) -> Option<AppEvent> {
-    if crate::util::copy_to_clipboard(value) {
-        Some(AppEvent::Info("Copied to clipboard".to_string()))
-    } else {
-        Some(AppEvent::Info("Failed to copy to clipboard - install xclip, wl-copy, or xsel".to_string()))
-    }
-}
 
 #[derive(Debug)]
 pub enum FilterAction {
