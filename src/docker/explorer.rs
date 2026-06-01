@@ -4,7 +4,7 @@ use std::path::Path;
 use anyhow::Result;
 use bollard::container::{
     Config, CreateContainerOptions, DownloadFromContainerOptions, ListContainersOptions,
-    LogOutput, RemoveContainerOptions, StartContainerOptions, StopContainerOptions,
+    LogOutput, StartContainerOptions, StopContainerOptions,
     UploadToContainerOptions,
 };
 use bollard::exec::{CreateExecOptions, StartExecOptions, StartExecResults};
@@ -158,7 +158,7 @@ pub async fn ensure_volume_helper(docker: &Docker, volume_name: &str) -> Result<
         }
     }
 
-    // Create a new helper container
+    // Create a new helper container with auto-remove (--rm)
     let container = docker
         .create_container(
             Some(CreateContainerOptions {
@@ -170,6 +170,7 @@ pub async fn ensure_volume_helper(docker: &Docker, volume_name: &str) -> Result<
                 cmd: Some(vec!["sleep".into(), "86400".into()]),
                 host_config: Some(HostConfig {
                     binds: Some(vec![format!("{}:{}:z", volume_name, VOLUME_MOUNT_PATH)]),
+                    auto_remove: Some(true),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -184,15 +185,21 @@ pub async fn ensure_volume_helper(docker: &Docker, volume_name: &str) -> Result<
     Ok(container.id)
 }
 
-/// Remove the helper container for a given Docker volume.
+/// Stop the helper container for a given Docker volume.
+/// With auto_remove enabled, Docker automatically removes it on stop.
 pub async fn remove_volume_helper(docker: &Docker, volume_name: &str) -> Result<()> {
     let name = volume_container_name(volume_name);
     docker
         .stop_container(&name, None::<StopContainerOptions>)
-        .await?;
-    docker
-        .remove_container(&name, None::<RemoveContainerOptions>)
-        .await?;
+        .await
+        .or_else(|e| {
+            // If container already gone, that's fine
+            if e.to_string().contains("404") || e.to_string().contains("not found") {
+                Ok(())
+            } else {
+                Err(e)
+            }
+        })?;
     Ok(())
 }
 

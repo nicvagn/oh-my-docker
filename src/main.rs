@@ -23,6 +23,7 @@ mod update;
 
 use app::event::AppEvent;
 use app::event::Command;
+use app::mode::Mode;
 use runtime::tasks;
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -200,6 +201,24 @@ async fn main() -> Result<()> {
     }
 
     restore_terminal()?;
+
+    // Clean up volume helper container before exit (must await, not fire-and-forget)
+    if let Some(ref docker) = docker {
+        let mode = state.navigation.mode_stack.current().clone();
+        if let Mode::ExplorerVolume(_, name) = mode {
+            println!("Stopping ephemeral container for volume '{}'...", name);
+            let d = docker.clone();
+            let _ = tokio::time::timeout(
+                std::time::Duration::from_secs(5),
+                async move {
+                    let _ = crate::docker::explorer::remove_volume_helper(&d, &name).await;
+                },
+            )
+            .await;
+            println!("Ephemeral container stopped and removed.");
+        }
+    }
+
     Ok(())
 }
 
