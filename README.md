@@ -45,8 +45,9 @@ Requires Docker to be installed and the user to have access to the Docker socket
 - **Clipboard** — copy container ID, image ID, network ID, or volume name with `Ctrl+Y`
 - **Live logs** — streaming with follow mode, pause/resume (`Space`/`p`), reconnect (`r`), search (`/`), scroll, jump-to-top/bottom, timestamp toggle (`T`), export to file (`s`/`Ctrl+S`)
 - **Shell access** — `docker exec -it` inside any container with configurable shell (`sh`, `bash`, `/bin/zsh`), user (`root`, `host` → `uid:gid`, or custom `user:group`), and working directory. Config per container persisted to `~/.config/omdocker/omdocker.toml`. TUI suspends, shell runs in the parent terminal, TUI resumes on exit
-- **File explorer** — browse and transfer files between host and container (`x` to open, `Tab` to switch panels, `Ctrl+C` to copy, `r` to rename, `d` to delete, `R` to refresh)
-- **Image management** — list, remove, run containers from images with configurable command/env/ports/volumes/name/auto-remove and inline validation
+- **Container file explorer** — browse and transfer files between host and container (`x` to open, `Tab` to switch panels, `Ctrl+C` to copy, `r` to rename, `d` to delete, `R` to refresh)
+- **Volume file explorer** — browse Docker volume contents via an ephemeral helper container (`alpine` with `sleep 86400`, created once and reused). Two-panel layout: host filesystem (left) and volume filesystem (right). Supports directory navigation, file delete/rename, refreshing
+- **Image management** — list, remove, run containers from images with a configurable run form (command, env, ports, volumes, name, auto-remove, restart policy, memory/CPU limits, network, labels, privileged mode) with inline validation
 - **Dangling/prune images** — remove dangling (`<none>`) images with `D`, prune all unused images with `p`
 - **Docker events** — real-time event stream with type filtering, scrolling, jump-to-top/bottom
 - **Statistics** — live `docker stats` view with CPU %, memory, network I/O, block I/O, PIDs; sortable by column with `←`/`→`, toggle direction with `t`
@@ -57,7 +58,7 @@ Requires Docker to be installed and the user to have access to the Docker socket
 - **Persistent errors** — red error toasts for critical messages, dismiss with any key; auto-dismissing info toasts
 - **Self-update** — background check for new versions on startup (configurable), `U` to check/download, auto-replaces binary
 - **Configurable** — polling intervals, column visibility, and keybindings in `~/.config/omdocker/omdocker.toml`
-- **Keyboard-first** — all actions available via keys, no mouse needed
+- **Keyboard-first** — all actions available via keys, mouse scrolling supported in explorer panels and scrollable views
 - **Fast** — async polling, non-blocking UI, ring buffers for logs/events
 - **CLI** — `--help`/`-h`, `--version`/`-V`, and optional filter argument `<search_text>`
 
@@ -208,15 +209,16 @@ Live stats for running containers (CPU, memory, network, block I/O, PIDs), updat
 | `j` / `↓` | Navigate down |
 | `k` / `↑` | Navigate up |
 | `d` | Delete selected volume |
+| `Enter` | Open volume file explorer |
 | `/` | Activate filter |
 | `Ctrl+Y` | Copy volume name to clipboard |
 | `Ctrl+O` | Toggle column picker |
 
-### Explorer
+### Explorer (Container / Volume)
 
 | Key | Action |
 |-----|--------|
-| `Tab` | Switch between host (left) and container (right) panel |
+| `Tab` | Switch between host (left) and container/volume (right) panel (container mode only) |
 | `j` / `↓` | Navigate down |
 | `k` / `↑` | Navigate up |
 | `Enter` | Enter directory |
@@ -224,12 +226,13 @@ Live stats for running containers (CPU, memory, network, block I/O, PIDs), updat
 | `PgUp` / `PgDn` | Jump 20 items |
 | `g` | Jump to first item |
 | `G` | Jump to last item |
-| `Ctrl+C` | Copy selected file between panels |
+| `Ctrl+C` | Copy selected file between panels (container mode only) |
 | `d` | Delete selected file/dir (with confirmation) |
 | `r` | Rename selected file/dir |
 | `R` | Refresh panel listing |
 | `/` | Activate filter |
 | `Esc` | Go back / close explorer |
+| Mouse wheel | Scroll focused panel |
 
 ### Confirm Dialog
 
@@ -244,14 +247,14 @@ Live stats for running containers (CPU, memory, network, block I/O, PIDs), updat
 src/
   main.rs              — Async tokio event loop, shell exec, TUI lifecycle
   config.rs            — TOML config persistence (~/.config/omdocker/omdocker.toml)
-  util.rs              — Shared helpers
+  util.rs              — Shared helpers (scroll offset, format utilities)
   update.rs            — Self-update: GitHub release check, download, binary replace
   app/
     mode.rs            — Mode enum + ModeStack (back navigation, max depth 10)
     state.rs           — AppState with all sub-states
     event.rs           — AppEvent enum + data types + Command enum
     navigation.rs      — NavigationState (groups modal sub-states)
-    reducer.rs         — Thin dispatcher, delegates to per-domain reducers
+    reducer.rs         — Thin dispatcher, delegates to per-domain reducers; mouse scroll handling
     reducers/
       mod.rs           — Reducer module root
       container.rs     — Container list state reducer
@@ -262,8 +265,8 @@ src/
       network.rs       — Network list state reducer
       volume.rs        — Volume list state reducer
       shell.rs         — Shell config state reducer
-      navigation.rs    — Navigation/modal state reducer
-      explorer.rs      — File explorer state reducer
+      navigation.rs    — Navigation/modal state reducer (modes, confirm dialog, help)
+      explorer.rs      — File explorer state reducer (host, container, volume)
     handlers/
       mod.rs           — Shared input handlers (filter input, clipboard)
       container.rs     — Container list input handler
@@ -275,27 +278,30 @@ src/
       volume.rs        — Volume list input handler
       shell.rs         — Shell + shell config input handler
       navigation.rs    — Details, help, confirm dialog input handler
-      explorer.rs      — File explorer input handler
+      explorer.rs      — File explorer input handler (container + volume)
   ui/
     mod.rs             — Shared render utilities (filter bar)
     containers.rs      — Container table with search
     container_details.rs — Parsed metadata display with scrolling
     logs.rs            — Ring buffer (10k), follow/pause, search/highlight
-    images.rs          — Image table + run config form
+    images.rs          — Image table
+    image_run.rs       — Image run config form (command, env, ports, volumes, etc.)
+    resource_panel.rs  — Reusable resource list panel (used by containers, images, networks, volumes)
     shell.rs           — Shell placeholder/waiting screen
     shell_config.rs    — Shell config form (shell, user, workdir)
     events.rs          — Docker event stream with type coloring + filter
     statistics.rs      — Live docker stats table
     networks.rs        — Network table
     volumes.rs         — Volume table
-    explorer.rs        — File explorer panels (host + container)
+    explorer.rs        — File explorer panels (host + container/volume)
     help.rs            — Help overlay
     column_picker.rs   — Column picker popup
+    confirm_dialog.rs  — Confirm/cancel dialog overlay
     tabs_bar.rs        — Tab bar renderer
     status_bar.rs      — Status bar with container count / Docker status
     theme.rs           — Color theme constants
   docker/
-    client.rs          — bollard Docker client
+    client.rs          — bollard Docker client (connection / reconnection)
     containers.rs      — List, inspect, start/stop/restart/delete
     images.rs          — List, remove, create container from image
     logs.rs            — Streaming log collector
@@ -303,7 +309,7 @@ src/
     statistics.rs      — Docker stats collector
     networks.rs        — List, remove
     volumes.rs         — List, remove
-    explorer.rs        — Copy files between host and container
+    explorer.rs        — List files, copy/rename/delete in containers and volumes
   search/
     fuzzy.rs           — fuzzy-matcher wrapper
     mod.rs             — Search module root
@@ -337,6 +343,11 @@ Shell access suspends the TUI entirely: the terminal exits raw mode/alternate sc
 exit the TUI re-initializes and resumes. Per-container shell preferences (shell,
 user, workdir) are persisted to `~/.config/omdocker/omdocker.toml`.
 
+The volume file explorer creates a lightweight helper container (`alpine:latest` with
+`sleep 86400`) that mounts the target Docker volume. The container is created once and
+reused across directory navigations for fast listing via `docker exec`. It is cleaned
+up when leaving the volume explorer (via `Command::RemoveVolumeHelper`).
+
 ## Dependencies
 
 | Crate | Purpose |
@@ -350,7 +361,9 @@ user, workdir) are persisted to `~/.config/omdocker/omdocker.toml`.
 | `fuzzy-matcher` | Fuzzy search across container/image lists |
 | `anyhow` | Error reporting and backtrace formatting |
 | `chrono` | Timestamp formatting for logs and events |
-| `futures-util` | Async stream utilities |
+| `futures-util` | Async stream utilities (log streaming, stats, event stream) |
+| `tar` | Creating/extracting tar archives for file copy operations |
+| `ureq` | HTTP client for self-update (GitHub release API) |
 
 ## License
 
