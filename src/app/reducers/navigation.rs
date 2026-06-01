@@ -88,6 +88,7 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
                 state.explorer.transfer_error = None;
                 state.explorer.transfer_message_clear_tick = 0;
                 state.explorer.transfer_error_clear_tick = 0;
+                state.explorer.last_click_time = None;
                 state.explorer.focus = crate::app::state::ExplorerFocus::Left;
                 commands.push(Command::ListHostDir(state.explorer.host.path.clone()));
                 commands.push(Command::FetchContainerWorkingDir(id.clone()));
@@ -112,6 +113,7 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
                 state.explorer.transfer_error = None;
                 state.explorer.transfer_message_clear_tick = 0;
                 state.explorer.transfer_error_clear_tick = 0;
+                state.explorer.last_click_time = None;
                 state.explorer.focus = crate::app::state::ExplorerFocus::Left;
                 commands.push(Command::ListHostDir(state.explorer.host.path.clone()));
                 commands.push(Command::ListVolumeDir(name.clone(), "/".to_string()));

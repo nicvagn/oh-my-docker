@@ -1,6 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::app::event::{AppEvent, ConfirmAction};
-use crate::app::mode::Mode;
 use crate::app::state::AppState;
 use crate::app::state::ExplorerFocus;
 
@@ -9,26 +8,21 @@ fn max_selected(item_count: usize, show_parent: bool) -> usize {
 }
 
 pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
-    let is_volume = matches!(state.navigation.mode_stack.current(), Mode::ExplorerVolume(_, _));
-
-    if state.explorer.host.filter_active || (!is_volume && state.explorer.container.filter_active) {
+    if state.explorer.host.filter_active || state.explorer.container.filter_active {
         return handle_filter_input(key, state);
     }
-    if state.explorer.host.rename_active || (!is_volume && state.explorer.container.rename_active) {
+    if state.explorer.host.rename_active || state.explorer.container.rename_active {
         return handle_rename_input(key, state);
     }
 
     let code = key.code;
     let mods = key.modifiers;
 
-    // Tab to switch focus (not in volume mode)
-    if !is_volume {
-        if (code == KeyCode::Tab && mods == KeyModifiers::NONE)
-            || code == KeyCode::BackTab
-            || (code == KeyCode::Tab && mods == KeyModifiers::SHIFT)
-        {
-            return Some(AppEvent::ExplorerSelect);
-        }
+    if (code == KeyCode::Tab && mods == KeyModifiers::NONE)
+        || code == KeyCode::BackTab
+        || (code == KeyCode::Tab && mods == KeyModifiers::SHIFT)
+    {
+        return Some(AppEvent::ExplorerSelect);
     }
 
     // Backspace to go up
@@ -36,7 +30,7 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         return Some(AppEvent::ExplorerHostGoUp);
     }
 
-    let host_selected = is_volume || state.explorer.focus == ExplorerFocus::Left;
+    let host_selected = state.explorer.focus == ExplorerFocus::Left;
     let selected = if host_selected { state.explorer.host.selected } else { state.explorer.container.selected };
     let path = if host_selected { &state.explorer.host.path } else { &state.explorer.container.path };
     let items = if host_selected { &state.explorer.host.items } else { &state.explorer.container.items };
@@ -104,8 +98,7 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
     if code == KeyCode::Char('/') && mods == KeyModifiers::NONE {
         return Some(if host_selected { AppEvent::ExplorerHostActivateFilter } else { AppEvent::ExplorerContainerActivateFilter });
     }
-    // Ctrl+C - copy (only in non-volume mode)
-    if code == KeyCode::Char('c') && mods == KeyModifiers::CONTROL && !is_volume {
+    if code == KeyCode::Char('c') && mods == KeyModifiers::CONTROL {
         return Some(match state.explorer.focus {
             ExplorerFocus::Left => AppEvent::ExplorerCopyToContainer,
             ExplorerFocus::Right => AppEvent::ExplorerCopyFromContainer,

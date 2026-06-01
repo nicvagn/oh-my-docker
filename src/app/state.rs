@@ -177,6 +177,9 @@ pub struct ExplorerState {
     pub transfer_error: Option<String>,
     pub transfer_message_clear_tick: u64,
     pub transfer_error_clear_tick: u64,
+    pub last_click_time: Option<Instant>,
+    pub last_click_is_host: bool,
+    pub last_click_item_index: usize,
 }
 
 impl Default for ExplorerState {
@@ -190,6 +193,9 @@ impl Default for ExplorerState {
             transfer_error: None,
             transfer_message_clear_tick: 0,
             transfer_error_clear_tick: 0,
+            last_click_time: None,
+            last_click_is_host: false,
+            last_click_item_index: 0,
         }
     }
 }

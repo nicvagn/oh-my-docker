@@ -1,9 +1,10 @@
 use std::collections::HashMap;
+use std::time::Instant;
 
 use ratatui::layout::Constraint;
 
 use crate::app::event::{AppEvent, Command, MouseClickKind};
-use crate::app::state::{AppState, StatSort};
+use crate::app::state::{AppState, ExplorerFocus, StatSort};
 use crate::app::mode::{self, Mode, TAB_TITLES};
 use crate::ui::resource_panel::{header_column_at, ContainerResource, ImageResource, NetworkResource, VolumeResource, Resource};
 
@@ -73,8 +74,8 @@ fn scroll_state(state: &mut AppState, dir: i32) {
         }
         Mode::Explorer(_) | Mode::ExplorerVolume(_, _) => {
             let panel = match state.explorer.focus {
-                crate::app::state::ExplorerFocus::Left => &mut state.explorer.host,
-                crate::app::state::ExplorerFocus::Right => &mut state.explorer.container,
+                ExplorerFocus::Left => &mut state.explorer.host,
+                ExplorerFocus::Right => &mut state.explorer.container,
             };
             let len = panel.all_items.len();
             if len > 0 {
@@ -319,6 +320,123 @@ pub fn reduce(state: &mut AppState, event: AppEvent) -> Vec<Command> {
                             state.volumes.selected = idx;
                         }
                         _ => {}
+                    }
+                }
+                MouseClickKind::Left if matches!(state.navigation.mode_stack.current(), Mode::Explorer(_) | Mode::ExplorerVolume(_, _)) && *row > 0 => {
+                    let left_width = (state.term_width * 48) / 100;
+                    let is_host = *col < left_width;
+                    state.explorer.focus = if is_host { ExplorerFocus::Left } else { ExplorerFocus::Right };
+                    let show_parent;
+                    let scroll_off;
+                    let all_len;
+                    {
+                        let p = if is_host { &state.explorer.host } else { &state.explorer.container };
+                        show_parent = p.path != "/";
+                        scroll_off = p.scroll_offset;
+                        all_len = p.all_items.len();
+                    }
+                    let visual_row = row.saturating_sub(1) as usize;
+                    let table_row = scroll_off + visual_row;
+                    if show_parent && table_row == 0 {
+                        state.explorer.last_click_time = None;
+                        if is_host {
+                            if let Some(parent) = std::path::PathBuf::from(&state.explorer.host.path)
+                                .parent().and_then(|p| p.to_str()).filter(|s| !s.is_empty())
+                            {
+                                state.explorer.host.path = if parent == "/" { "/".to_string() } else { parent.to_string() };
+                                state.explorer.host.selected = 0;
+                                state.explorer.host.filter = String::new();
+                                state.explorer.host.filter_active = false;
+                                state.explorer.host.rename_active = false;
+                                state.explorer.host.rename_buffer = String::new();
+                                commands.push(Command::ListHostDir(state.explorer.host.path.clone()));
+                            }
+                        } else {
+                            let path = &state.explorer.container.path;
+                            if path != "/" {
+                                let cleaned = path.strip_suffix('/').unwrap_or(path);
+                                let parts: Vec<&str> = cleaned.split('/').filter(|s| !s.is_empty()).collect();
+                                let new_path = if parts.len() <= 1 {
+                                    "/".to_string()
+                                } else {
+                                    format!("/{}/", parts[..parts.len() - 1].join("/"))
+                                };
+                                state.explorer.container.path.clone_from(&new_path);
+                                state.explorer.container.selected = 0;
+                                state.explorer.container.filter = String::new();
+                                state.explorer.container.filter_active = false;
+                                state.explorer.container.rename_active = false;
+                                state.explorer.container.rename_buffer = String::new();
+                                let cmd = if let Mode::ExplorerVolume(_, name) = state.navigation.mode_stack.current() {
+                                    Command::ListVolumeDir(name.clone(), new_path)
+                                } else {
+                                    Command::ListContainerDir(state.explorer.container_id.clone(), new_path)
+                                };
+                                commands.push(cmd);
+                            }
+                        }
+                    } else {
+                        let item_idx = if show_parent { table_row.saturating_sub(1) } else { table_row };
+                        if item_idx < all_len {
+                            let entry_name;
+                            let entry_is_dir;
+                            {
+                                let p = if is_host { &state.explorer.host } else { &state.explorer.container };
+                                let entry = &p.all_items[item_idx];
+                                entry_name = entry.name.clone();
+                                entry_is_dir = entry.is_dir;
+                            }
+                            let now = Instant::now();
+                            let is_double = state.explorer.last_click_time
+                                .map(|t| now.saturating_duration_since(t).as_millis() < 300)
+                                .unwrap_or(false)
+                                && state.explorer.last_click_is_host == is_host
+                                && state.explorer.last_click_item_index == item_idx;
+                            state.explorer.last_click_time = Some(now);
+                            state.explorer.last_click_is_host = is_host;
+                            state.explorer.last_click_item_index = item_idx;
+                            if is_double && entry_is_dir {
+                                if is_host {
+                                    let new_path = if state.explorer.host.path == "/" {
+                                        format!("/{}", entry_name)
+                                    } else {
+                                        format!("{}/{}", state.explorer.host.path, entry_name)
+                                    };
+                                    state.explorer.host.path.clone_from(&new_path);
+                                    state.explorer.host.selected = 0;
+                                    state.explorer.host.filter = String::new();
+                                    state.explorer.host.filter_active = false;
+                                    state.explorer.host.rename_active = false;
+                                    state.explorer.host.rename_buffer = String::new();
+                                    commands.push(Command::ListHostDir(new_path));
+                                } else {
+                                    let path = &state.explorer.container.path;
+                                    let new_path = if path.ends_with('/') {
+                                        format!("{}{}", path, entry_name)
+                                    } else {
+                                        format!("{}/{}", path, entry_name)
+                                    };
+                                    state.explorer.container.path = format!("{}/", new_path);
+                                    state.explorer.container.selected = 0;
+                                    state.explorer.container.filter = String::new();
+                                    state.explorer.container.filter_active = false;
+                                    state.explorer.container.rename_active = false;
+                                    state.explorer.container.rename_buffer = String::new();
+                                    let cmd = if let Mode::ExplorerVolume(_, name) = state.navigation.mode_stack.current() {
+                                        Command::ListVolumeDir(name.clone(), state.explorer.container.path.clone())
+                                    } else {
+                                        Command::ListContainerDir(state.explorer.container_id.clone(), state.explorer.container.path.clone())
+                                    };
+                                    commands.push(cmd);
+                                }
+                            } else {
+                                if is_host {
+                                    state.explorer.host.selected = table_row;
+                                } else {
+                                    state.explorer.container.selected = table_row;
+                                }
+                            }
+                        }
                     }
                 }
                 _ => {}
