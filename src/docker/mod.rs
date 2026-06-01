@@ -1,5 +1,6 @@
 pub mod client;
 pub mod containers;
+pub mod diagnostics;
 pub mod images;
 pub mod logs;
 pub mod events;

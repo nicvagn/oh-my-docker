@@ -124,6 +124,35 @@ pub struct HelpState {
     pub scroll_offset: usize,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum DiagnosticsPhase {
+    Collecting,
+    Analyzing,
+    Done,
+    Error(String),
+}
+
+#[derive(Clone, Debug)]
+pub struct DiagnosticsState {
+    pub container_id: String,
+    pub phase: DiagnosticsPhase,
+    pub analysis: String,
+    pub playbook: String,
+    pub scroll_offset: usize,
+}
+
+impl DiagnosticsState {
+    pub fn new(container_id: String) -> Self {
+        Self {
+            container_id,
+            phase: DiagnosticsPhase::Collecting,
+            analysis: String::new(),
+            playbook: String::new(),
+            scroll_offset: 0,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ExplorerFocus {
     Left,

@@ -20,6 +20,8 @@ pub enum Mode {
         prompt: String,
         action: crate::app::event::ConfirmAction,
     },
+    Diagnostics(String),
+    InfoDialog(String),
 }
 
 #[derive(Clone, Debug)]

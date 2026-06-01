@@ -53,6 +53,7 @@ Requires Docker to be installed and the user to have access to the Docker socket
 - **Networks** — list and delete Docker networks with column picker
 - **Volumes** — list and delete Docker volumes with column picker
 - **Container lifecycle** — start, stop (shows "stopping..."), restart, delete (shows "deleting...") with confirmation dialogs
+- **AI diagnostics** — one-key diagnostics (`D`) compiles container context (recent logs, exit code, resource stats, config) and sends it to a local or cloud LLM for root-cause analysis and a repair playbook, displayed in a split side panel
 - **Docker reconnection** — automatic periodic reconnection with visual feedback when Docker is unavailable
 - **Persistent errors** — red error toasts for critical messages, dismiss with any key; auto-dismissing info toasts
 - **Self-update** — background check for new versions on startup (configurable), `U` to check/download, auto-replaces binary
@@ -94,6 +95,7 @@ Requires Docker to be installed and the user to have access to the Docker socket
 | `t` | Start/stop container |
 | `r` | Restart container |
 | `d` | Delete container (with confirmation) |
+| `D` | AI diagnostics |
 | `Space` | Toggle selection mode; in selection mode, toggle single container |
 | `Ctrl+A` | Select all filtered containers (in selection mode) |
 | `Esc` | Exit selection mode |
@@ -107,6 +109,7 @@ Requires Docker to be installed and the user to have access to the Docker socket
 | `s` | Open shell |
 | `x` | Open file explorer |
 | `r` | Restart container |
+| `D` | AI diagnostics |
 | `t` | Start/Stop container (context-sensitive) |
 | `j` / `↑` | Scroll down |
 | `k` / `↓` | Scroll up |
@@ -115,6 +118,35 @@ Requires Docker to be installed and the user to have access to the Docker socket
 | `g` | Go to top |
 | `G` | Go to bottom |
 | `Esc` | Back to container list |
+
+### AI Diagnostics
+
+| Key | Action |
+|-----|--------|
+| `D` | Trigger diagnostics on selected container (from list or details view) |
+| `D` / `Esc` | Close diagnostics and return to previous view |
+| `j` / `↓` / `PgDn` | Scroll down |
+| `k` / `↑` / `PgUp` | Scroll up |
+| `g` | Jump to top |
+| `G` | Jump to bottom |
+
+Press `D` on any container to trigger AI diagnostics. omdocker compiles a
+context vector — recent logs, exit code, resource stats (CPU/mem/net), environment
+variables, and container config — and sends it to a configured LLM provider. Results
+stream into a split panel: root-cause analysis on the left, step-by-step repair
+playbook on the right.
+
+**Requires a configured `[llm]` section in `~/.config/omdocker/omdocker.toml`:**
+```toml
+[llm]
+provider = "ollama"     # or "openai", "anthropic"
+model = "llama3"        # any model your provider supports
+# base_url = "http://localhost:11434"   # override default endpoint
+# api_key = "sk-..."                    # for cloud providers
+```
+If no `[llm]` section is configured, pressing `D` shows a dialog with setup
+instructions. The config file is reloaded on each `D` press — edit the file
+from another terminal and the changes take effect immediately without restart.
 
 ### Images
 
@@ -251,11 +283,10 @@ src/
     navigation.rs      — NavigationState (groups modal sub-states)
     reducer.rs         — Thin dispatcher, delegates to per-domain reducers; mouse scroll handling
     reducers/
-      mod.rs           — Reducer module root
-      container.rs     — Container list state reducer
-      image.rs         — Image list state reducer
-      log.rs           — Log state reducer
-      event.rs         — Events state reducer
+       mod.rs           — Reducer module root
+       container.rs     — Container list state reducer
+       diagnostics.rs   — AI diagnostics state reducer
+       event.rs         — Events state reducer
       statistics.rs    — Statistics state reducer
       network.rs       — Network list state reducer
       volume.rs        — Volume list state reducer
@@ -274,11 +305,12 @@ src/
       shell.rs         — Shell + shell config input handler
       navigation.rs    — Details, help, confirm dialog input handler
       explorer.rs      — File explorer input handler (container + volume)
-  ui/
-    mod.rs             — Shared render utilities (filter bar)
-    containers.rs      — Container table with search
-    container_details.rs — Parsed metadata display with scrolling
-    logs.rs            — Ring buffer (10k), follow/pause, search/highlight
+   ui/
+     mod.rs             — Shared render utilities (filter bar)
+     containers.rs      — Container table with search
+     container_details.rs — Parsed metadata display with scrolling
+     diagnostics.rs     — AI diagnostics split-panel (analysis + playbook)
+     logs.rs            — Ring buffer (10k), follow/pause, search/highlight
     images.rs          — Image table
     image_run.rs       — Image run config form (command, env, ports, volumes, etc.)
     resource_panel.rs  — Reusable resource list panel (used by containers, images, networks, volumes)
@@ -298,6 +330,7 @@ src/
   docker/
     client.rs          — bollard Docker client (connection / reconnection)
     containers.rs      — List, inspect, start/stop/restart/delete
+    diagnostics.rs     — Diagnostic context compiler (logs, stats, exit code, config)
     images.rs          — List, remove, create container from image
     logs.rs            — Streaming log collector
     events.rs          — Docker event stream
@@ -308,6 +341,8 @@ src/
   search/
     fuzzy.rs           — fuzzy-matcher wrapper
     mod.rs             — Search module root
+  llm/
+    mod.rs             — LLM client: prompt builder, curl-backed streaming, JSON parsing (Ollama/OpenAI/Anthropic)
   input/
     handler.rs         — Key dispatcher, routes to handlers by mode
     keys.rs            — KeyCode + Modifiers combinators
@@ -343,6 +378,11 @@ The volume file explorer creates a lightweight helper container (`alpine:latest`
 reused across directory navigations for fast listing via `docker exec`. It is cleaned
 up when leaving the volume explorer (via `Command::RemoveVolumeHelper`).
 
+AI diagnostics compile a `DiagnosticContext` (logs, exit code, resource stats,
+environment, config) and send it to a configured LLM via `curl`. The response is
+parsed into structured `analysis` and `playbook` fields, rendered in a split panel
+with severity-aware color coding.
+
 ## Dependencies
 
 | Crate | Purpose |
@@ -359,6 +399,7 @@ up when leaving the volume explorer (via `Command::RemoveVolumeHelper`).
 | `futures-util` | Async stream utilities (log streaming, stats, event stream) |
 | `tar` | Creating/extracting tar archives for file copy operations |
 | `ureq` | HTTP client for self-update (GitHub release API) |
+| `curl` (CLI) | HTTP client for LLM API calls (diagnostics feature) |
 
 ## License
 

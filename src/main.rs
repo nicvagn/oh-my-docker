@@ -20,6 +20,7 @@ mod runtime;
 mod config;
 mod util;
 mod update;
+mod llm;
 
 use app::event::AppEvent;
 use app::event::Command;
@@ -61,16 +62,25 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    let mut config = config::OmdockerConfig::load();
+    let (mut config, parse_err) = config::OmdockerConfig::load();
+    if let Some(ref e) = parse_err {
+        eprintln!("Warning: {}", e);
+    }
     config.polling.clamp();
     if config.check_updates.is_none() {
-        print!("Check for updates on startup? [Y/n]: ");
-        use std::io::Write;
-        std::io::stdout().flush()?;
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input).ok();
-        config.check_updates = Some(!matches!(input.trim().to_lowercase().as_str(), "n" | "no"));
-        config.save().map_err(|e| anyhow::anyhow!(e))?;
+        // Only prompt on genuine first run (file doesn't exist), not on parse failure
+        let is_first_run = !config::OmdockerConfig::path().exists();
+        if is_first_run || parse_err.is_some() {
+            if is_first_run {
+                print!("Check for updates on startup? [Y/n]: ");
+                use std::io::Write;
+                std::io::stdout().flush()?;
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).ok();
+                config.check_updates = Some(!matches!(input.trim().to_lowercase().as_str(), "n" | "no"));
+            }
+            config.save().map_err(|e| anyhow::anyhow!(e))?;
+        }
     }
 
     let mut terminal = init_terminal()?;
@@ -284,6 +294,11 @@ fn handle_commands(commands: Vec<Command>, docker: &Option<Docker>, tx: &mpsc::U
                     }
                     Command::RemoveNetwork(id) => tasks::spawn_remove_network(d.clone(), tx.clone(), id),
                     Command::RemoveVolume(name) => tasks::spawn_remove_volume(d.clone(), tx.clone(), name),
+                    Command::StartDiagnostics(id) => {
+                        if let Some(ref llm) = state.config.llm {
+                            tasks::spawn_diagnostics(d.clone(), tx.clone(), llm.clone(), id);
+                        }
+                    }
                     Command::ExportLogs(path, lines) => {
                         let tx = tx.clone();
                         tokio::spawn(async move {

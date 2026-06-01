@@ -149,6 +149,7 @@ pub fn reduce(state: &mut AppState, event: &AppEvent) -> Vec<Command> {
             state.navigation.logs = None;
             state.navigation.shell_config = None;
             state.navigation.image_run = None;
+            state.navigation.diagnostics = None;
             state.navigation.mode_stack.back();
             // Update selected_tab based on the mode we returned to
             if let Some(tab) = mode::mode_to_tab(state.navigation.mode_stack.current()) {

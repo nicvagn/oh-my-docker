@@ -308,16 +308,16 @@ pub fn spawn_network_poller(docker: Docker, tx: UnboundedSender<AppEvent>, inter
     );
 }
 
-  pub fn spawn_volume_poller(docker: Docker, tx: UnboundedSender<AppEvent>, intervals: PollingIntervals) {
-        spawn_poller(
-            intervals.volumes_ms,
-            docker,
-            tx,
-            |d| async move { docker::volumes::list_volumes(&d).await.map_err(|e| e.to_string()) },
-            AppEvent::VolumesUpdated,
-            "Volumes",
-        );
-    }
+pub fn spawn_volume_poller(docker: Docker, tx: UnboundedSender<AppEvent>, intervals: PollingIntervals) {
+    spawn_poller(
+        intervals.volumes_ms,
+        docker,
+        tx,
+        |d| async move { docker::volumes::list_volumes(&d).await.map_err(|e| e.to_string()) },
+        AppEvent::VolumesUpdated,
+        "Volumes",
+    );
+}
 
 pub fn spawn_remove_dangling_images(docker: Docker, tx: UnboundedSender<AppEvent>) {
     tokio::spawn(async move {
@@ -407,6 +407,26 @@ pub fn spawn_batch_toggle_containers(docker: Docker, tx: UnboundedSender<AppEven
     });
 }
 
+pub fn spawn_diagnostics(
+    docker: Docker,
+    tx: UnboundedSender<AppEvent>,
+    llm_config: crate::config::LlmConfig,
+    container_id: String,
+) {
+    tokio::spawn(async move {
+        let _ = tx.send(AppEvent::DiagnosticsPhaseUpdate(crate::app::state::DiagnosticsPhase::Collecting));
+
+        let ctx = match crate::docker::diagnostics::collect_diagnostics(&docker, &container_id).await {
+            Ok(ctx) => ctx,
+            Err(e) => {
+                let _ = tx.send(AppEvent::DiagnosticsError(format!("Failed to collect diagnostics: {}", e)));
+                return;
+            }
+        };
+
+        crate::llm::request_diagnostics(&llm_config, &ctx, tx).await;
+    });
+}
 pub fn spawn_batch_delete_containers(docker: Docker, tx: UnboundedSender<AppEvent>, ids: Vec<String>) {
     tokio::spawn(async move {
         let total = ids.len();

@@ -199,6 +199,8 @@ pub struct Keybindings {
     pub logs_export: Vec<String>,
     #[serde(default = "default_toggle_timestamps", deserialize_with = "string_or_vec")]
     pub toggle_timestamps: Vec<String>,
+    #[serde(default = "default_open_diagnostics", deserialize_with = "string_or_vec")]
+    pub open_diagnostics: Vec<String>,
 }
 
 macro_rules! default_keys {
@@ -234,6 +236,7 @@ default_keys! {
     default_logs_export => vec!["Ctrl+S"];
     default_toggle_timestamps => vec!["T"];
     default_sort_direction => vec!["Ctrl+T"];
+    default_open_diagnostics => vec!["D"];
 }
 
 impl Default for Keybindings {
@@ -263,6 +266,7 @@ impl Default for Keybindings {
             sort_direction: default_sort_direction(),
             logs_export: default_logs_export(),
             toggle_timestamps: default_toggle_timestamps(),
+            open_diagnostics: default_open_diagnostics(),
         }
     }
 }
@@ -307,12 +311,14 @@ impl Keybindings {
             HelpEntry::Key(format!("    {} ", key_first(&self.search)), "Search/filter".to_string()),
             HelpEntry::Key(format!("    {} ", key_first(&self.toggle_selection)), "Toggle selection mode".to_string()),
             HelpEntry::Key(format!("    {} ", key_first(&self.select_all)), "Select all (in selection mode)".to_string()),
+            HelpEntry::Key(format!("    {} ", key_first(&self.open_diagnostics)), "AI diagnostics".to_string()),
             HelpEntry::Key("    S       ".to_string(), "Cycle status filter (All/Running/Stopped/Paused)".to_string()),
             HelpEntry::Key("    Ctrl+O  ".to_string(), "Column picker".to_string()),
             HelpEntry::Blank,
             HelpEntry::Section("CONTAINER DETAILS"),
             HelpEntry::Key(format!("    {} ", key_first(&self.open_logs)), "Open logs".to_string()),
             HelpEntry::Key(format!("    {} ", key_first(&self.open_shell)), "Open shell (exec)".to_string()),
+            HelpEntry::Key(format!("    {} ", key_first(&self.open_diagnostics)), "AI diagnostics".to_string()),
             HelpEntry::Key(format!("    {} ", key_first(&self.restart)), "Restart container".to_string()),
             HelpEntry::Key(format!("    {} ", key_first(&self.start_stop)), "Start/Stop container".to_string()),
             HelpEntry::Key("    x       ".to_string(), "Open file explorer".to_string()),
@@ -429,6 +435,26 @@ fn default_true() -> bool {
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct LlmConfig {
+    #[serde(default = "default_provider")]
+    pub provider: String,
+    #[serde(default)]
+    pub base_url: String,
+    #[serde(default = "default_model")]
+    pub model: String,
+    #[serde(default)]
+    pub api_key: String,
+}
+
+fn default_provider() -> String {
+    "ollama".to_string()
+}
+
+fn default_model() -> String {
+    "llama3".to_string()
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct OmdockerConfig {
     pub latest_shell: Option<String>,
     #[serde(default)]
@@ -451,6 +477,8 @@ pub struct OmdockerConfig {
     pub volume_columns: VolumeColumns,
     #[serde(default = "default_true")]
     pub mouse: bool,
+    #[serde(default)]
+    pub llm: Option<LlmConfig>,
 }
 
 impl OmdockerConfig {
@@ -473,24 +501,29 @@ impl Default for OmdockerConfig {
             network_columns: NetworkColumns::default(),
             volume_columns: VolumeColumns::default(),
             mouse: true,
+            llm: None,
         }
     }
 }
 
 impl OmdockerConfig {
-    fn path() -> PathBuf {
+    pub fn path() -> PathBuf {
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
         PathBuf::from(home).join(".config").join("omdocker").join("omdocker.toml")
     }
 
-    pub fn load() -> Self {
+    /// Loads config from disk. Returns (config, parse_error) — `parse_error` is Some
+    /// when the file exists but could not be parsed (possibly stale/invalid TOML).
+    pub fn load() -> (Self, Option<String>) {
         let path = Self::path();
-        let config: Self = std::fs::read_to_string(&path)
-            .ok()
-            .and_then(|content| toml::from_str(&content).ok())
-            .unwrap_or_default();
-        let _ = config.save();
-        config
+        let content = match std::fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(_) => return (Self::default(), None),
+        };
+        match toml::from_str::<Self>(&content) {
+            Ok(config) => (config, None),
+            Err(e) => (Self::default(), Some(format!("Config parse error: {}", e))),
+        }
     }
 
     pub fn save(&self) -> Result<(), String> {

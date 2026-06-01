@@ -165,6 +165,7 @@ pub struct KeyMap {
     pub sort_direction: Vec<ParsedKey>,
     pub logs_export: Vec<ParsedKey>,
     pub toggle_timestamps: Vec<ParsedKey>,
+    pub open_diagnostics: Vec<ParsedKey>,
 }
 
 impl Default for KeyMap {
@@ -194,6 +195,7 @@ impl Default for KeyMap {
             sort_direction: vec![parse_keybinding("Ctrl+T")],
             logs_export: vec![parse_keybinding("Ctrl+S")],
             toggle_timestamps: vec![parse_keybinding("T")],
+            open_diagnostics: vec![parse_keybinding("D")],
         }
     }
 }
@@ -232,6 +234,7 @@ impl KeyMap {
             sort_direction: parse_all(&keybindings.sort_direction),
             logs_export: parse_all(&keybindings.logs_export),
             toggle_timestamps: parse_all(&keybindings.toggle_timestamps),
+            open_diagnostics: parse_all(&keybindings.open_diagnostics),
         }
     }
 
@@ -317,6 +320,10 @@ impl KeyMap {
 
     pub fn is_toggle_timestamps(&self, code: KeyCode, modifiers: KeyModifiers) -> bool {
         any_match(&self.toggle_timestamps, code, modifiers)
+    }
+
+    pub fn is_open_diagnostics(&self, code: KeyCode, modifiers: KeyModifiers) -> bool {
+        any_match(&self.open_diagnostics, code, modifiers)
     }
 
     pub fn is_help(&self, code: KeyCode, modifiers: KeyModifiers) -> bool {

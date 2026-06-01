@@ -659,9 +659,18 @@ pub fn reduce(state: &mut AppState, event: AppEvent) -> Vec<Command> {
                 | AppEvent::ExplorerContainerActivateRename
                 | AppEvent::ExplorerRenameUpdate(_)
                 | AppEvent::ExplorerRenameSubmit
-                | AppEvent::ExplorerHostDirUpdated(_, _)
+                |                 AppEvent::ExplorerHostDirUpdated(_, _)
                 | AppEvent::ContainerWorkingDir(_, _) => {
                     commands.extend(crate::app::reducers::explorer::reduce(state, &event));
+                }
+                AppEvent::StartDiagnostics(_)
+                | AppEvent::DiagnosticsPhaseUpdate(_)
+                | AppEvent::DiagnosticsChunk(_)
+                | AppEvent::DiagnosticsPlaybook(_)
+                | AppEvent::DiagnosticsDone
+                | AppEvent::DiagnosticsError(_)
+                | AppEvent::ScrollDiagnostics(_) => {
+                    commands.extend(crate::app::reducers::diagnostics::reduce(state, &event));
                 }
                 _ => {}
             }
