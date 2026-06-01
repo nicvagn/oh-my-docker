@@ -8,10 +8,13 @@ use crate::ui::theme;
 fn shortcuts(mode: &Mode) -> &'static str {
     match mode {
         Mode::Containers => {
-            " Enter:details  l:logs  s:shell  /:filter  S:status  ←/→:sort  ^T:direction  Ctrl+U/D:page  g/G:top/bot  t:start/stop  r:restart  d:delete  Space:select "
+            " Enter:details  l:logs  s:shell  D:diagnostics  /:filter  S:status  ←/→:sort  ^T:direction  Ctrl+U/D:page  g/G:top/bot  t:start/stop  r:restart  d:delete  Space:select "
         }
         Mode::ContainerDetails(_) => {
-            " j/k:scroll  PgUp/PgDn:page  g/G:top/bot  l:logs  s:shell  x:explorer  t:start/stop  r:restart  Esc:back "
+            " j/k:scroll  PgUp/PgDn:page  g/G:top/bot  l:logs  s:shell  x:explorer  D:diagnostics  t:start/stop  r:restart  Esc:back "
+        }
+        Mode::Diagnostics(_) => {
+            " j/k:scroll  PgUp/PgDn:page  g/G:top/bot  D/Esc:back "
         }
         Mode::Logs(_) => {
             " j/k:scroll  PgUp/PgDn:page  g/G:top/bot  /:search  p:pause  T:timestamps  s:export  Esc:back "
@@ -48,6 +51,9 @@ fn shortcuts(mode: &Mode) -> &'static str {
         }
         Mode::ConfirmDialog { .. } => {
             " y:yes  n:no  Enter:yes  Esc:no "
+        }
+        Mode::InfoDialog(_) => {
+            " any key:close "
         }
     }
 }

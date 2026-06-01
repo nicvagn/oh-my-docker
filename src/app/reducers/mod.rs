@@ -1,4 +1,5 @@
 pub mod container;
+pub mod diagnostics;
 pub mod event;
 pub mod explorer;
 pub mod image;

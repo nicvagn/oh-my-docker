@@ -1,9 +1,10 @@
 use std::time::Duration;
 
 use ratatui::Frame;
-use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Style};
-use ratatui::widgets::Paragraph;
+use ratatui::text::{Line, Span, Text};
+use ratatui::widgets::{Block, BorderType, Borders, Clear, Paragraph};
 use crate::app::mode;
 use crate::app::mode::Mode;
 use crate::app::state::AppState;
@@ -30,6 +31,7 @@ pub fn staleness_indicator(last_updated: Option<std::time::Instant>, interval_ms
 
 pub mod column_picker;
 pub mod container_details;
+pub mod diagnostics;
 pub mod explorer;
 pub mod logs;
 pub mod resource_panel;
@@ -127,6 +129,12 @@ fn render_content(frame: &mut Frame, state: &mut AppState, area: Rect) {
         Mode::Explorer(_) | Mode::ExplorerVolume(_, _) => explorer::render(frame, area, state),
         Mode::Help => help::render(frame, area, &mut state.navigation.help, &state.config),
         Mode::ConfirmDialog { .. } => confirm_dialog::render(frame, area, state.navigation.mode_stack.current()),
+        Mode::InfoDialog(_) => render_info_dialog(frame, area, state.navigation.mode_stack.current()),
+        Mode::Diagnostics(_) => {
+            if let Some(ref mut d) = state.navigation.diagnostics {
+                diagnostics::render(frame, area, d);
+            }
+        }
     }
 }
 
@@ -223,4 +231,50 @@ fn render_error_toast(frame: &mut Frame, message: &str, persistent: bool) {
             .style(Style::default().fg(Color::White).bg(bg)),
         toast_area,
     );
+}
+
+fn render_info_dialog(frame: &mut Frame, area: Rect, mode: &Mode) {
+    let Mode::InfoDialog(message) = mode else {
+        return;
+    };
+
+    let max_line_width = message.lines().map(|l| l.len()).max().unwrap_or(40) as u16;
+    let width = (max_line_width + 8).min(area.width).max(44);
+    let line_count = message.lines().count() as u16;
+    let height = (line_count + 5).min(area.height).max(8);
+
+    let dialog_area = Rect {
+        x: area.x + (area.width.saturating_sub(width)) / 2,
+        y: area.y + (area.height.saturating_sub(height)) / 2,
+        width,
+        height,
+    };
+
+    frame.render_widget(Clear, dialog_area);
+
+    let block = Block::default()
+        .title(" AI DIAGNOSTICS ")
+        .title_alignment(Alignment::Center)
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(Color::Yellow));
+
+    let mut full_lines: Vec<Line> = vec![Line::from("")];
+    for l in message.lines() {
+        full_lines.push(Line::from(Span::styled(
+            format!("  {}", l),
+            Style::default().fg(Color::White),
+        )));
+    }
+    full_lines.push(Line::from(""));
+    full_lines.push(Line::from(Span::styled(
+        "  Press any key to close",
+        Style::default().fg(Color::DarkGray),
+    )));
+
+    let paragraph = Paragraph::new(Text::from(full_lines))
+        .style(Style::default().fg(Color::White))
+        .block(block);
+
+    frame.render_widget(paragraph, dialog_area);
 }

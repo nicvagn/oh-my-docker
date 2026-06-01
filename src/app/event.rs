@@ -241,6 +241,14 @@ pub enum AppEvent {
     ExplorerRenameSubmit,
     ExplorerHostDirUpdated(String, Vec<ExplorerEntry>),
     ContainerWorkingDir(String, String),
+
+    StartDiagnostics(String),
+    DiagnosticsPhaseUpdate(crate::app::state::DiagnosticsPhase),
+    DiagnosticsChunk(String),
+    DiagnosticsPlaybook(String),
+    DiagnosticsDone,
+    DiagnosticsError(String),
+    ScrollDiagnostics(i32),
 }
 
 #[derive(Clone, Debug)]
@@ -299,4 +307,5 @@ pub enum Command {
     RenameContainerFile(String, String, String),
     FetchContainerWorkingDir(String),
     RemoveVolumeHelper(String),
+    StartDiagnostics(String),
 }

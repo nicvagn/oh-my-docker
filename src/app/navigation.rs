@@ -1,5 +1,5 @@
 use crate::app::mode::ModeStack;
-use crate::app::state::{DetailsState, HelpState, ImageRunState, LogState, ShellConfigState, ShellState};
+use crate::app::state::{DetailsState, DiagnosticsState, HelpState, ImageRunState, LogState, ShellConfigState, ShellState};
 
 #[derive(Clone, Debug)]
 pub struct NavigationState {
@@ -10,6 +10,7 @@ pub struct NavigationState {
     pub shell: Option<ShellState>,
     pub shell_config: Option<ShellConfigState>,
     pub help: HelpState,
+    pub diagnostics: Option<DiagnosticsState>,
 }
 
 impl NavigationState {
@@ -22,6 +23,7 @@ impl NavigationState {
             shell: None,
             shell_config: None,
             help: HelpState::default(),
+            diagnostics: None,
         }
     }
 }

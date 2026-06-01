@@ -128,6 +128,27 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         return Some(AppEvent::CheckUpdate);
     }
 
+    if km.is_open_diagnostics(code, mods) && !in_input_mode {
+        match state.navigation.mode_stack.current() {
+            Mode::Containers => {
+                let id = state.containers.items
+                    .get(state.containers.filtered.get(state.containers.selected).copied().unwrap_or(0))
+                    .map(|c| c.id.clone())
+                    .unwrap_or_default();
+                if !id.is_empty() {
+                    return Some(AppEvent::StartDiagnostics(id));
+                }
+            }
+            Mode::ContainerDetails(id) => {
+                return Some(AppEvent::StartDiagnostics(id.clone()));
+            }
+            Mode::Diagnostics(_) => {
+                return Some(AppEvent::Back);
+            }
+            _ => {}
+        }
+    }
+
     // Global view navigation shortcuts — only for base tab modes
     if !in_input_mode && mode::mode_to_tab(state.navigation.mode_stack.current()).is_some() {
         let current = state.navigation.mode_stack.current();
@@ -159,6 +180,28 @@ pub fn handle_key(key: KeyEvent, state: &AppState) -> Option<AppEvent> {
         Mode::Volumes => crate::app::handlers::volume::handle_key_with_clipboard(key, state),
         Mode::Help => crate::app::handlers::navigation::handle_help_key(key, state),
         Mode::ConfirmDialog { .. } => crate::app::handlers::navigation::handle_confirm_dialog_key(key),
+        Mode::InfoDialog(_) => Some(AppEvent::Back),
         Mode::Explorer(_) | Mode::ExplorerVolume(_, _) => crate::app::handlers::explorer::handle_key(key, state),
+        Mode::Diagnostics(_) => {
+            let km = &state.keymap;
+            let code = key.code;
+            let mods = key.modifiers;
+            if code == KeyCode::Esc || km.is_back(code, mods) || km.is_open_diagnostics(code, mods) {
+                return Some(AppEvent::Back);
+            }
+            if km.is_navigate_down(code, mods) || code == KeyCode::Down || code == KeyCode::PageDown {
+                return Some(AppEvent::ScrollDiagnostics(1));
+            }
+            if km.is_navigate_up(code, mods) || code == KeyCode::Up || code == KeyCode::PageUp {
+                return Some(AppEvent::ScrollDiagnostics(-1));
+            }
+            if km.is_jump_top(code, mods) {
+                return Some(AppEvent::ScrollDiagnostics(-10000));
+            }
+            if km.is_jump_bottom(code, mods) {
+                return Some(AppEvent::ScrollDiagnostics(10000));
+            }
+            None
+        }
     }
 }
