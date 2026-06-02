@@ -408,7 +408,6 @@ enter the git repository root.
 Build the guile scheme recipe like:
 `guix build --file=omdocker.scm`
 
-
 ## License
 
 MIT
